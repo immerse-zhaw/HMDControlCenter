@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+build/
+
+# local env files and secrets
+.env
+.secrets/*
+
+#log files
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/*
+.idea/*
