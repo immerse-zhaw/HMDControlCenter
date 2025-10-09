@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Device, App, File } from "../../shared/contracts.js";
 import { UploadButton } from "./UploadButton.js";
+import { DeleteAppButton } from "./DeleteAppButton.js";
+import { LaunchAppButton, LaunchHomeButton } from "./LaunchAppButton.js";
 
 
 function statusIcon(d: Device) {
@@ -18,40 +20,54 @@ export default function App() {
   const [apps, setApps] = useState<App[] | null>(null);
   const [files, setFiles] = useState<File[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [_updateConfig, setUpdateConfig] = useState(false);
 
-  // health
   useEffect(() => {
-    fetch("/api/health").then(r => setBackend(r.ok ? "🟢" : "🔴")).catch(() => setBackend("🔴"));
+    fetch("/api/health")
+      .then(r => setBackend(r.ok ? "🟢" : "🔴"))
+      .catch(() => setBackend("🔴"));
   }, []);
 
-  // data
-  useEffect(() => {
-    (async () => {
-      try {
-        const [devRes, appRes, fileRes] = await Promise.all([
-          fetch("/api/devices"),
-          fetch("/api/apps"),
-          fetch("/api/files"),
-        ]);
-        if (!devRes.ok) throw new Error(`Failed to fetch devices: ${devRes.status} ${await devRes.text()}`);
-        if (!appRes.ok) throw new Error(`Failed to fetch apps: ${appRes.status} ${await appRes.text()}`);
-        if (!fileRes.ok) throw new Error(`Failed to fetch files: ${fileRes.status} ${await fileRes.text()}`);
+  async function refreshData() {
+    try {
+      const [devRes, appRes, fileRes] = await Promise.all([
+        fetch("/api/devices"),
+        fetch("/api/apps"),
+        fetch("/api/files"),
+      ]);
+      if (!devRes.ok) throw new Error(`Failed to fetch devices: ${devRes.status} ${await devRes.text()}`);
+      if (!appRes.ok) throw new Error(`Failed to fetch apps: ${appRes.status} ${await appRes.text()}`);
+      if (!fileRes.ok) throw new Error(`Failed to fetch files: ${fileRes.status} ${await fileRes.text()}`);
 
-        const devData = (await devRes.json()) as Device[];
-        const appData = (await appRes.json()) as App[];
-        const fileData = (await fileRes.json()) as File[];
+      const devData = (await devRes.json()) as Device[];
+      const appData = (await appRes.json()) as App[];
+      const fileData = (await fileRes.json()) as File[];
 
-        setDevices(devData);
-        setApps(appData);
-        setFiles(fileData);
-        setError(null);
-      }
-      catch (e) {
-        console.error(e);
-        setError((e as Error).message);
-      }
-    })();
-  }, []);
+      setDevices(devData);
+      setApps(appData);
+      setFiles(fileData);
+      setError(null);
+    }
+    catch (e) {
+      console.error(e);
+      setError((e as Error).message);
+    }
+  }
+  
+  useEffect(() => { void refreshData(); }, []);
+
+  async function refreshAndUpdateConfig() {
+    try {
+      setUpdateConfig(true);
+      const r = await fetch("/api/managexr/updateConfig", { method: "POST" });
+      if (!r.ok) throw new Error(`Failed to update config: ${r.status} ${await r.text()}`);
+      await refreshData();
+    } catch (e) {
+      console.error(e);
+      setError((e as Error).message);
+    }
+  }
+
 
   return (
     <div style={{ padding: 16, fontFamily: "system-ui, sans-serif" }}>
@@ -59,6 +75,7 @@ export default function App() {
       <p style={{ marginTop: 0 }}>Backend: {backend}</p>
       {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
 
+      {/* Devices */}
       <section style={{ marginTop: 16 }}>
         <h2>Devices</h2>
         {!devices ? (
@@ -102,6 +119,7 @@ export default function App() {
         )}
       </section>
 
+      {/* Apps */}
       <section style={{ marginTop: 16 }}>
         <h2>Apps</h2>
         <UploadButton
@@ -109,8 +127,9 @@ export default function App() {
           accept=".apk,application/vnd.android.package-archive"
           endpoint="/api/managexr/upload/app"
           fieldName="apk"
-          onDone={() => {/* refresh apps list if you want */ }}
+          onDone={refreshAndUpdateConfig}
         />
+        <LaunchHomeButton/>
         {!apps ? (
           <p>Loading apps…</p>
         ) : apps.length === 0 ? (
@@ -121,14 +140,20 @@ export default function App() {
               <thead>
                 <tr>
                   <th style={th}>Name</th>
-                  <th style={th}>Description</th>
+                  <th style={th}>Play</th>
+                  <th style={th}>Delete</th>
                 </tr>
               </thead>
               <tbody>
                 {apps.map(a => (
                   <tr key={a.id}>
                     <td style={td}><strong>{a.name ?? "—"}</strong></td>
-                    <td style={td}>{a.description ?? "—"}</td>
+                    <td>
+                      <LaunchAppButton appId={a.id} launchParams={{ test:"test" }} />
+                    </td>
+                    <td>
+                      <DeleteAppButton appId={a.id} onDone={refreshAndUpdateConfig} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -137,6 +162,7 @@ export default function App() {
         )}
       </section>
 
+      {/* Files */}
       <section style={{ marginTop: 16, marginBottom: 32 }}>
         <h2>Files</h2>
         <UploadButton
@@ -144,7 +170,7 @@ export default function App() {
           accept="*/*"                       // change if you want to restrict
           endpoint="/api/managexr/upload/file"
           fieldName="file"
-          onDone={() => {/* refresh files list if you want */ }}
+          onDone={refreshAndUpdateConfig}
         />
         {!files ? (
           <p>Loading files…</p>
@@ -157,8 +183,6 @@ export default function App() {
                 <tr>
                   <th style={th}>Name</th>
                   <th style={th}>Size</th>
-                  <th style={th}>Description</th>
-                  <th style={th}>Library Path</th>
                 </tr>
               </thead>
               <tbody>
@@ -166,8 +190,6 @@ export default function App() {
                   <tr key={f.id}>
                     <td style={td}><strong>{f.name ?? "—"}</strong></td>
                     <td style={td}>{f.size != null ? `${(f.size / (1024 * 1024)).toFixed(2)} MB` : "—"}</td>
-                    <td style={td}>{f.description ?? "—"}</td>
-                    <td style={td}>{f.path ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
-import { env } from "../../config/env.js";
+import { env } from "process";
 import path from "node:path";
 
-const CMD = process.env.MXR_CLI ?? "mxr-cli";
+const CMD = env.MXR_CLI ?? "mxr-cli";
+const pathToKey = env.MXR_KEY_PATH ?? "../../.secrets/key.json";
 
 async function execCli(args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -49,7 +50,7 @@ export async function uploadApp(
 ) {
     await ensureCliAvailable();
     const abs = path.resolve(apkPath);
-    const args = ["upload-app", abs, "--api-key-file", env.MXR_KEY_PATH];
+    const args = ["upload-app", abs, "--api-key-file", pathToKey];
     if (options?.title) args.push("--title", options.title);
     if (options?.description) args.push("--description", options.description);
     if (options?.version) args.push("--version", options.version);
@@ -65,7 +66,7 @@ export async function uploadFile(
 ) {
     await ensureCliAvailable();
     const abs = path.resolve(filePath);
-    const args = ["upload-file", abs, "--api-key-file", env.MXR_KEY_PATH];
+    const args = ["upload-file", abs, "--api-key-file", pathToKey];
     if (options?.name) args.push("--name", options.name);
     if (options?.description) args.push("--description", options.description);
     return execCli(args);

@@ -72,3 +72,19 @@ export async function listFiles(): Promise<File[]> {
         path: f.libraryDirectoryPath,
     }));
 }
+
+export async function launchAppOnAllDevices(
+  packageName: string,
+  launchParams?: Record<string, unknown>
+) {
+  if (!packageName) throw new Error("packageName required");
+  const devices = await listDevices();
+  const deviceIds = devices.map(d => d.id);
+  if (!deviceIds.length) throw new Error("No devices found");
+
+  return manageXR("POST", "/v1/devices/batch-command", {
+    action: "LAUNCH_APP",
+    deviceIds,
+    data: { packageName, ...(launchParams ? { launchParams } : {}) },
+  });
+}
