@@ -1,3 +1,4 @@
+import { Console } from "node:console";
 import { promises } from "node:fs";
 import z from "zod";
 
@@ -10,6 +11,7 @@ export type ManageXRKey = z.infer<typeof Key>;
 
 export async function loadManageXRKey(path: string): Promise<ManageXRKey> {
     const fileContent = JSON.parse(await promises.readFile(path, "utf-8"));
+    console.log("Loaded ManageXR key from %s", fileContent);
     return Key.parse(fileContent);
 }
 

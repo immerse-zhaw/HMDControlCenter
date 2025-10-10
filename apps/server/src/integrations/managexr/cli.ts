@@ -7,7 +7,7 @@ const pathToKey = env.MXR_KEY_PATH ?? "../../.secrets/key.json";
 
 async function execCli(args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-        const child = spawn(CMD, args, { stdio: ["ignore", "pipe", "pipe"], shell: false });
+        const child = spawn(CMD, args, { stdio: ["ignore", "pipe", "pipe"], shell: true });
         let out = "", err = "";
         child.stdout.on("data", (data) => out += data.toString());
         child.stderr.on("data", (data) => err += data.toString());
