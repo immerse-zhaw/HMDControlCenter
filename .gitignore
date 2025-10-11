@@ -19,3 +19,4 @@ Thumbs.db
 # IDE files
 .vscode/*
 .idea/*
+apps/vr_player/SampleVids/startvideo.mp4

@@ -48,6 +48,7 @@ managexrUploads.post("/upload/file", upload.single("file"), async (req, res) => 
     }
     try {
         const out = await uploadFile(req.file.path, {
+            name: req.file.originalname,
         });
         res.json({ ok: true, output: out });
     } catch (e : any) {
