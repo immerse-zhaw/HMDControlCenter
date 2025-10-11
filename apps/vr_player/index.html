@@ -2,188 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VR Video Player Control</title>
     <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #222;
-            color: #eee;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        #layout {
-            display: grid;
-            grid-template-columns: minmax(280px, 1.1fr) minmax(220px, 0.9fr) 1.5fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 2.2rem 2.2rem;
-            height: 100vh;
-            width: 100vw;
-            padding: 2.5rem 2.5vw;
-            box-sizing: border-box;
-            align-items: stretch;
-            justify-items: stretch;
-        }
-        #mainPanel.panel {
-            grid-row: 1 / span 2;
-            grid-column: 1 / 2;
-            border-radius: 2.5rem;
-            background: #333;
-            box-shadow: 0 0 24px rgba(0,0,0,0.35);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 220px;
-            min-height: 400px;
-            padding: 2.5rem 1.5rem;
-        }
-        #videoPanel.panel {
-            grid-row: 1 / 2;
-            grid-column: 2 / 3;
-            border-radius: 2rem;
-            background: #2d2d2d;
-            box-shadow: 0 0 16px rgba(0,0,0,0.22);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 180px;
-            min-height: 160px;
-            padding: 1.5rem 1rem;
-        }
-        #videoListPanel.panel {
-            grid-row: 2 / 3;
-            grid-column: 2 / 3;
-            border-radius: 2rem;
-            background: #2d2d2d;
-            box-shadow: 0 0 16px rgba(0,0,0,0.22);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 180px;
-            min-height: 160px;
-            padding: 1.5rem 1rem;
-        }
-        #glbPanel.panel {
-            grid-row: 1 / 2;
-            grid-column: 3 / 4;
-            border-radius: 2rem;
-            background: #2d3540;
-            box-shadow: 0 0 16px rgba(0,0,0,0.22);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 320px;
-            min-height: 160px;
-            padding: 1.5rem 1rem;
-            transition: background 0.2s, box-shadow 0.2s;
-        }
-        #glbPreviewPanel.panel {
-            grid-row: 2 / 3;
-            grid-column: 3 / 4;
-            border-radius: 2rem;
-            background: #2d3540;
-            box-shadow: 0 0 16px rgba(0,0,0,0.22);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 320px;
-            min-height: 160px;
-            padding: 1.5rem 1rem;
-        }
-        #glbPanel.drag-hover, #videoPanel.drag-hover {
-            background: #2d2d2d;
-            box-shadow: 0 0 24px #005fa3;
-        }
-        #glbDropZone, #videoDropZone {
-            width: 100%;
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #232323;
-            border-radius: 1.2rem;
-            color: #aaa;
-            cursor: pointer;
-            transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
-            border: 2.5px dashed #1976d2;
-            box-sizing: border-box;
-            font-size: 1em;
-            text-align: center;
-            margin-bottom: 0.5rem;
-        }
-        #glbDropText, #videoDropText {
-            width: 100%;
-            text-align: center;
-            font-size: 1em;
-            line-height: 1.3;
-            display: block;
-        }
-        #glbDropZone.hover, #videoDropZone.hover {
-            background: #2d3540;
-            border-color: #42a5f5;
-            box-shadow: 0 0 0 2px #1976d2;
-        }
-        #glbUploadStatus, #videoUploadStatus { min-height: 1em; }
-        #glbPreview { width: 100%; height: 320px; border-radius: 1rem; background: #111; display: none; }
-        #glbPreviewPlaceholder { padding: 2em; border-radius: 1rem; background: #2c2c2c; text-align: center; color: #999; height: 240px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        input, button { margin: 0.5em; padding: 0.5em; border-radius: 5px; border: none; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #222; color: #eee; padding: 1em; box-sizing: border-box; min-height: 100vh; }
+    #layout { display: flex; gap: 1em; align-items: stretch; justify-content: center; width: 100%; height: calc(100vh - 2em); flex-wrap: wrap; }
+    .column { display: flex; gap: 1em; align-items: stretch; flex: 1; min-width: 300px; height: fit-content; }
+    .column.vertical { flex-direction: column; height: 100%; }
+    #leftColumn { flex: 2; }
+    #middleColumn { flex: 1; max-width: 250px; }
+    #rightColumn { flex: 2; }
+    .panel { background: #333; padding: 1em; border-radius: 12px; box-shadow: 0 0 18px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 0.75em; flex: 1; }
+    .panel h2, .panel h3 { margin: 0 0 0.5em 0; padding: 0; }
+    #mainPanel.panel { flex: 2; min-height: 500px; align-items: center; }
+    #videoListPanel.panel { flex: 1; min-height: 300px; }
+    #videoUploadPanel.panel { flex: 0 0 140px; }
+    #glbPanel { flex: 0 0 140px; transition: background 0.2s ease, box-shadow 0.2s ease; }
+    #glbPreviewPanel { flex: 1; min-height: 300px; }
+
+    #glbPanel.drag-hover, #videoUploadPanel.drag-hover { background: #2d2d2d; box-shadow: 0 0 20px #005fa3; }
+    #glbDropZone { width: 100%; height: 80px; display: flex; align-items: center; justify-content: center; background: #232323; border-radius: 12px; color: #aaa; cursor: pointer; transition: background 0.2s ease, box-shadow 0.2s, border-color 0.2s; border: 2.5px dashed #1976d2; box-sizing: border-box; font-size: 0.9em; text-align: center; }
+    #glbDropText { width: 100%; text-align: center; font-size: 0.98em; line-height: 1.3; display: block; }
+    #glbDropZone.hover, #videoDropZone.hover { background: #2d3540; border-color: #42a5f5; box-shadow: 0 0 0 2px #1976d2; }
+    #glbUploadStatus, #videoUploadStatus { min-height: 1em; }
+    #glbPreview { width: 100%; height: 320px; border-radius: 10px; background: #111; display: none; }
+    #glbPreviewPlaceholder { padding: 1.5em; border-radius: 10px; background: #2c2c2c; text-align: center; color: #999; height: 200px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        input, button { margin: 0.5em; padding: 0.5em; border-radius: 5px; border: none; max-width: 100%; box-sizing: border-box; }
         button { background: #0078d7; color: #fff; cursor: pointer; }
         button.toggled { background: #005fa3; }
         button:hover { background: #005fa3; }
-        .toggle-buttons { display: flex; justify-content: flex-end; gap: 1em; }
+        .toggle-buttons { display: flex; justify-content: flex-end; gap: 1em; flex-wrap: wrap; }
+        .device-inputs { display: flex; gap: 0.5em; flex-wrap: wrap; align-items: center; justify-content: center; width: 100%; margin: 0 auto 1em auto; }
+        #videoContainer { margin: 2em auto 0 auto !important; width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
+        #videoPreview, #videoPlaceholder { margin: 0 auto; }
 
+        /* Responsive Design */
         @media (max-width: 1200px) {
-            #layout {
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: auto auto auto;
-                gap: 1.2rem;
-                padding: 1rem;
-            }
-            #mainPanel.panel {
-                grid-row: 1 / 2;
-                grid-column: 1 / 3;
-                min-height: 200px;
-            }
-            #videoPanel.panel {
-                grid-row: 2 / 3;
-                grid-column: 1 / 2;
-            }
-            #glbPanel.panel {
-                grid-row: 2 / 3;
-                grid-column: 2 / 3;
-            }
-            #videoListPanel.panel {
-                grid-row: 3 / 4;
-                grid-column: 1 / 2;
-            }
-            #glbPreviewPanel.panel {
-                grid-row: 3 / 4;
-                grid-column: 2 / 3;
-            }
+            body { padding: 0.5em; }
+            #layout { gap: 0.5em; }
+            .column { min-width: 250px; }
+            #middleColumn { max-width: none; }
+            .panel { padding: 1em; }
         }
-        @media (max-width: 800px) {
-            #layout {
-                grid-template-columns: 1fr;
-                grid-template-rows: repeat(5, auto);
-                gap: 1rem;
-                padding: 0.5rem;
-            }
-            #mainPanel.panel, #videoPanel.panel, #glbPanel.panel, #videoListPanel.panel, #glbPreviewPanel.panel {
-                grid-column: 1 / 2 !important;
-                min-height: 80px;
-                font-size: 1rem;
-            }
+
+        @media (max-width: 900px) {
+            #layout { flex-direction: column; height: auto; }
+            .column { flex-direction: row; flex-wrap: wrap; min-width: 100%; }
+            .column.vertical { flex-direction: row; flex-wrap: wrap; }
+            #leftColumn, #middleColumn, #rightColumn { flex: none; max-width: 100%; }
+            .panel { min-width: 280px; max-width: 100%; margin: 0.25em; box-sizing: border-box; }
+            #mainPanel.panel { min-height: 400px; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 0.25em; }
+            #layout { flex-direction: column; gap: 0.25em; }
+            .column { flex-direction: column; flex-wrap: nowrap; }
+            .column.vertical { flex-direction: column; }
+            #leftColumn, #middleColumn, #rightColumn { flex: none; max-width: 100%; }
+            .panel { min-width: 100%; max-width: 100%; margin: 0; padding: 0.75em; box-sizing: border-box; }
+            #mainPanel.panel { min-height: 350px; }
+            #videoListPanel.panel { min-height: 200px; }
+            #glbPreviewPanel { min-height: 250px; }
         }
     </style>
 </head>
 <body>
     <div id="layout">
-        <div id="leftColumn" class="column">
+        <div id="leftColumn" class="column vertical">
             <div id="mainPanel" class="panel">
                 <h2>VR Video Player Control</h2>
                 <div class="device-inputs">
@@ -201,7 +87,7 @@
                     <button id="toggleMode" onclick="toggleMode()">Switch to 360 Mode</button>
                 </div>
                 <div id="status" style="margin-top:1em;"></div>
-                <div id="videoContainer" style="margin-top:1em; width:100%; max-width:400px;">
+                <div id="videoContainer" style="margin: 2em auto 0 auto !important; width:100%; max-width:400px; display: flex; flex-direction: column; align-items: center;">
                     <video id="videoPreview" controls style="width:100%; display:none;"></video>
                     <div id="videoPlaceholder" style="background:#555; padding:2em; text-align:center; border-radius:5px;">
                         <p>Video Preview</p>
@@ -209,9 +95,18 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <div id="middleColumn" class="column vertical">
+            <div id="videoUploadPanel" class="panel">
+                <h3>Upload Video Files</h3>
+                <div id="videoDropZone" style="width: 100%; height: 80px; display: flex; align-items: center; justify-content: center; background: #232323; border-radius: 12px; color: #aaa; cursor: pointer; transition: background 0.2s ease, box-shadow 0.2s, border-color 0.2s; border: 2.5px dashed #1976d2; box-sizing: border-box; font-size: 0.9em; text-align: center;">
+                    <span id="videoDropText">Drag & Drop video files here (.mp4, .mov, .avi)</span>
+                </div>
+                <div id="videoUploadStatus" style="min-height: 1em;"></div>
+            </div>
             <div id="videoListPanel" class="panel">
                 <h3 style="text-align:center;">Available Local Videos</h3>
-                <ul id="localVideos" style="list-style:none; padding:0; margin:0; max-height: 420px; overflow-y: auto;"></ul>
+                <ul id="localVideos" style="list-style:none; padding:0; margin:0; height: 100%; overflow-y: auto; flex: 1;"></ul>
             </div>
         </div>
         <div id="rightColumn" class="column vertical">
@@ -230,13 +125,7 @@
                     <p style="font-size:0.85em; opacity:0.7;">Drop or browse a GLB/GLTF to preview it here.</p>
                 </div>
             </div>
-            <div id="videoPanel" class="panel">
-                <h3>Upload Video Files</h3>
-                <div id="videoDropZone" style="width: 100%; height: 120px; display: flex; align-items: center; justify-content: center; background: #232323; border-radius: 12px; color: #aaa; cursor: pointer; transition: background 0.2s ease, box-shadow 0.2s, border-color 0.2s; border: 2.5px dashed #1976d2; box-sizing: border-box; font-size: 0.98em; text-align: center;">
-                    <span id="videoDropText">Drag & Drop video files here (.mp4, .mov, .avi)</span>
-                </div>
-                <div id="videoUploadStatus" style="min-height: 1em;"></div>
-            </div>
+
         </div>
     </div>
     <input type="file" id="glbFileInput" accept=".glb,.gltf" hidden>
@@ -575,7 +464,7 @@
         let glbPreviewUrl = null;
 
         // --- Video Upload Logic ---
-        const videoPanel = document.getElementById('videoPanel');
+        const videoUploadPanel = document.getElementById('videoUploadPanel');
         const videoDropZone = document.getElementById('videoDropZone');
         const videoDropText = document.getElementById('videoDropText');
         const videoUploadStatus = document.getElementById('videoUploadStatus');
@@ -644,7 +533,6 @@
                 if (!configResponse.ok) {
                     throw new Error(`Configuration update failed with status ${configResponse.status}`);
                 }
-
 
                 glbUploadStatus.style.color = '#0f0';
                 glbUploadStatus.textContent = `Successfully uploaded and deployed: ${file.name}`;
@@ -720,7 +608,6 @@
                     throw new Error(`Configuration update failed with status ${configResponse.status}`);
                 }
 
-
                 videoUploadStatus.style.color = '#0f0';
                 videoUploadStatus.textContent = `Successfully uploaded and deployed: ${file.name}`;
 
@@ -748,7 +635,7 @@
 
         function resetVideoDropZone() {
             videoDropZone.classList.remove('hover');
-            videoPanel.classList.remove('drag-hover');
+            videoUploadPanel.classList.remove('drag-hover');
             videoDropText.textContent = 'Drag & Drop video files here (.mp4, .mov, .avi)';
         }
 
@@ -791,7 +678,7 @@
             e.preventDefault();
             videoDragCounter++;
             videoDropZone.classList.add('hover');
-            videoPanel.classList.add('drag-hover');
+            videoUploadPanel.classList.add('drag-hover');
             videoDropText.textContent = 'Release to upload video files';
         });
         videoDropZone.addEventListener('dragover', (e) => {
