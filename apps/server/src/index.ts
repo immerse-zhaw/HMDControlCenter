@@ -4,6 +4,7 @@ import { listDevices, listApps, listFiles } from "./integrations/managexr/operat
 import { managexrUploads } from "./routes/managexr.uploads.js";
 import { managexrApps } from "./routes/managexr.apps.js";
 import { updateConfig } from "./integrations/managexr/deploy.js";
+import { streamTokens } from "./routes/managexr.stream.js";
 
 const app = express();
 app.use(express.json());
@@ -45,9 +46,12 @@ app.get("/api/files", async (_req, res) => {
 });
 
 app.use("/api/managexr", managexrUploads);
+
 app.use("/api/managexr", managexrApps);
 
 app.use("/api/managexr", updateConfig);
+
+app.use("/api/managexr/stream", streamTokens);
 
 
 app.listen(env.PORT, () => {

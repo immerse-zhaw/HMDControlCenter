@@ -3,6 +3,7 @@ import type { Device, App, File } from "../../shared/contracts.js";
 import { UploadButton } from "./UploadButton.js";
 import { DeleteAppButton } from "./DeleteAppButton.js";
 import { LaunchAppButton, LaunchHomeButton } from "./LaunchAppButton.js";
+import { StreamButton } from "./StreamButton.js";
 
 
 function statusIcon(d: Device) {
@@ -92,6 +93,7 @@ export default function App() {
                   <th style={th}>Model</th>
                   <th style={th}>Status</th>
                   <th style={th}>Battery</th>
+                  <th style={th}>Stream</th>
                 </tr>
               </thead>
               <tbody>
@@ -111,6 +113,7 @@ export default function App() {
                         </div>
                       )}
                     </td>
+                    <td><StreamButton deviceId={d.id} /></td>
                   </tr>
                 ))}
               </tbody>
