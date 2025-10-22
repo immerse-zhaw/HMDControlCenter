@@ -40,7 +40,7 @@ export function StreamButton({
     (async () => {
       setErr(null);
       try {
-        const r = await fetch("/api/managexr/stream/token", {
+        const r = await fetch("/api/managexr/streamingToken", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ deviceId }),

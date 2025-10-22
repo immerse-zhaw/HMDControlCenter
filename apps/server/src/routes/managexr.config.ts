@@ -1,19 +1,18 @@
-import { listApps, listFiles } from "./operations.js";
+import { listApps, listFiles } from "../integrations/managexr/operations.js";
 import { Router } from "express";
 import { env } from "process";
-import { manageXR } from "./client.js";
+import { manageXR } from "../integrations/managexr/client.js";
 
 const DEFAULT_CONFIG_ID = env.MXR_DEFAULT_CONFIG_ID;
-export const updateConfig = Router();
+
+export const managexrConfig = Router();
 
 async function patchConfig(body: any) {
-    console.log("vrContent =", JSON.stringify(body, null, 2));
-
     const r = await manageXR<{ data: any}>("PATCH", `/v1/configurations/${DEFAULT_CONFIG_ID}`, body);
     return r.data;
 }
 
-updateConfig.post("/updateConfig", async (_req, res) => {
+managexrConfig.post("/updateConfig", async (_req, res) => {
     try {
         const [apps, files] = await Promise.all([listApps(), listFiles()]);
         

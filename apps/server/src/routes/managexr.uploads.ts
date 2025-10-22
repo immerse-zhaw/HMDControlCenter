@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import os from "node:os";
 import { promises as fs } from "node:fs";
-import { uploadFile, uploadApp } from "../integrations/managexr/cli.js";
+import { uploadFile, uploadApp } from "../integrations/managexr/operations.js";
 import path from "node:path";
 
 const storageKeepExact = multer.diskStorage({

@@ -1,59 +1,31 @@
 import express from "express";
 import { env } from "./config/env.js";
-import { listDevices, listApps, listFiles } from "./integrations/managexr/operations.js";
+import { health } from "./routes/server.health.js";
+import { assets } from "./routes/storage.assets.js";
+import { managexrInfo } from "./routes/managexr.info.js";
 import { managexrUploads } from "./routes/managexr.uploads.js";
 import { managexrApps } from "./routes/managexr.apps.js";
-import { updateConfig } from "./integrations/managexr/deploy.js";
-import { streamTokens } from "./routes/managexr.stream.js";
+import { managexrStream } from "./routes/managexr.stream.js";
+import { managexrConfig } from "./routes/managexr.config.js";
+import { clients } from "./routes/realtime.clients.js";
+import { setupWebSocketServer } from "./realtime/websocket.js";
 
 const app = express();
 app.use(express.json());
 
-app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", time: new Date().toISOString() });
-});
+app.use("/api/server", health);
+app.use("/api/assets", assets);
 
-app.get("/api/devices", async (_req, res) => {
-    try {
-        const devices = await listDevices();
-        res.json(devices);
-    } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        res.status(502).json({ error: msg });
-    }
-});
-
-app.get("/api/apps", async (_req, res) => {
-    try {
-        const apps = await listApps();
-        res.json(apps);
-    }
-    catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        res.status(502).json({ error: msg });
-    }
-});
-
-app.get("/api/files", async (_req, res) => {
-    try {
-        const files = await listFiles();
-        res.json(files);
-    }
-    catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        res.status(502).json({ error: msg });
-    }
-});
-
+app.use("/api/managexr", managexrInfo);
 app.use("/api/managexr", managexrUploads);
-
 app.use("/api/managexr", managexrApps);
+app.use("/api/managexr", managexrStream);
+app.use("/api/managexr", managexrConfig);
 
-app.use("/api/managexr", updateConfig);
+app.use("/api/realtime", clients);
 
-app.use("/api/managexr/stream", streamTokens);
-
-
-app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, () => {
     console.log(`Server listening on http://localhost:${env.PORT}`);
 });
+
+setupWebSocketServer(server, env.REALTIME_WS_PATH);

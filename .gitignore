@@ -4,6 +4,7 @@ node_modules/
 # build outputs
 dist/
 build/
+data/
 
 # local env files and secrets
 .env

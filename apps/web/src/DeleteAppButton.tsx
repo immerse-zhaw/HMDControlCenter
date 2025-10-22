@@ -19,7 +19,7 @@ export function DeleteAppButton({
     setBusy(true);
     setMessage("Deleting…");
     try {
-      const r = await fetch(`/api/managexr/apps/${encodeURIComponent(appId)}`, {
+      const r = await fetch(`/api/managexr/${encodeURIComponent(appId)}`, {
         method: "DELETE",
       });
       const j = await r.json().catch(() => ({}));

@@ -1,10 +1,23 @@
 import { useEffect, useState } from "react";
-import type { Device, App, File } from "../../shared/contracts.js";
+import type { Device, App, File, DeviceInfo } from "../../shared/contracts.js";
 import { UploadButton } from "./UploadButton.js";
 import { DeleteAppButton } from "./DeleteAppButton.js";
 import { LaunchAppButton, LaunchHomeButton } from "./LaunchAppButton.js";
 import { StreamButton } from "./StreamButton.js";
+import { AssetUploadForm } from "./UploadAssetForm.js";
+import { RealtimeCommandForm } from "./RealtimeCommandForm.js";
 
+type RealtimeDevice = Omit<DeviceInfo, "ws">;
+
+type Asset = {
+  id: string;
+  type: "glb" | "video";
+  originalFilename: string;
+  mime: string;
+  sizeBytes: number;
+  streamUrl: string;    // /api/assets/:id/stream
+  downloadUrl: string;  // /api/assets/:id/download
+};
 
 function statusIcon(d: Device) {
   return d.online === true ? "🟢 Online" : d.online === false ? "🔴 Offline" : "• Unknown";
@@ -14,6 +27,18 @@ function batteryText(d: Device) {
   const base = `${d.batteryLevel}%`;
   return d.charging ? base + " ⚡︎" : base;
 }
+function formatMB(bytes: number | null | undefined) {
+  if (bytes == null) return "—";
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+function fmtWhen(ms: number) {
+  try {
+    const d = new Date(ms);
+    return isNaN(d.getTime()) ? "—" : d.toLocaleString();
+  } catch {
+    return "—";
+  }
+}
 
 export default function App() {
   const [backend, setBackend] = useState("…");
@@ -21,41 +46,60 @@ export default function App() {
   const [apps, setApps] = useState<App[] | null>(null);
   const [files, setFiles] = useState<File[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [assets, setAssets] = useState<Asset[] | null>(null);
   const [_updateConfig, setUpdateConfig] = useState(false);
 
+  // Realtime devices (WebSocket-connected home apps)
+  const [rtDevices, setRtDevices] = useState<RealtimeDevice[] | null>(null);
+
   useEffect(() => {
-    fetch("/api/health")
+    fetch("/api/server/health")
       .then(r => setBackend(r.ok ? "🟢" : "🔴"))
       .catch(() => setBackend("🔴"));
   }, []);
 
   async function refreshData() {
     try {
-      const [devRes, appRes, fileRes] = await Promise.all([
-        fetch("/api/devices"),
-        fetch("/api/apps"),
-        fetch("/api/files"),
+      const [devRes, appRes, fileRes, assetRes, rtRes] = await Promise.all([
+        fetch("/api/managexr/listDevices"),
+        fetch("/api/managexr/listApps"),
+        fetch("/api/managexr/listFiles"),
+        fetch("/api/assets"),
+        fetch("/api/realtime"),
       ]);
       if (!devRes.ok) throw new Error(`Failed to fetch devices: ${devRes.status} ${await devRes.text()}`);
       if (!appRes.ok) throw new Error(`Failed to fetch apps: ${appRes.status} ${await appRes.text()}`);
       if (!fileRes.ok) throw new Error(`Failed to fetch files: ${fileRes.status} ${await fileRes.text()}`);
+      if (!assetRes.ok) throw new Error(`Failed to fetch assets: ${assetRes.status} ${await assetRes.text()}`);
+      if (!rtRes.ok) throw new Error(`Failed to fetch realtime devices: ${rtRes.status} ${await rtRes.text()}`);
 
       const devData = (await devRes.json()) as Device[];
       const appData = (await appRes.json()) as App[];
       const fileData = (await fileRes.json()) as File[];
+      const assetData = (await assetRes.json()) as Asset[];
+
+      const rtJson = await rtRes.json();
+      const rtList: RealtimeDevice[] = Array.isArray(rtJson)
+        ? rtJson
+        : Array.isArray(rtJson?.devices)
+          ? rtJson.devices
+          : [];
 
       setDevices(devData);
       setApps(appData);
       setFiles(fileData);
+      setAssets(assetData);
+      setRtDevices(rtList);
       setError(null);
-    }
-    catch (e) {
+    } catch (e) {
       console.error(e);
       setError((e as Error).message);
     }
   }
-  
-  useEffect(() => { void refreshData(); }, []);
+
+  useEffect(() => {
+    void refreshData();
+  }, []);
 
   async function refreshAndUpdateConfig() {
     try {
@@ -69,12 +113,50 @@ export default function App() {
     }
   }
 
-
   return (
     <div style={{ padding: 16, fontFamily: "system-ui, sans-serif" }}>
       <h1 style={{ marginBottom: 4 }}>IMMERSE Control Center</h1>
       <p style={{ marginTop: 0 }}>Backend: {backend}</p>
       {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
+
+      {/* Realtime (WebSocket) Devices */}
+      <section style={{ marginTop: 16 }}>
+        <h2>Realtime Devices</h2>
+        {!rtDevices ? (
+          <p>Loading realtime devices…</p>
+        ) : rtDevices.length === 0 ? (
+          <p>No realtime devices connected.</p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ borderCollapse: "collapse", minWidth: 840 }}>
+              <thead>
+                <tr>
+                  <th style={th}>Device ID</th>
+                  <th style={th}>Model</th>
+                  <th style={th}>App</th>
+                  <th style={th}>Version</th>
+                  <th style={th}>Connected</th>
+                  <th style={th}>Send Command</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rtDevices.map(rd => (
+                  <tr key={rd.id}>
+                    <td style={td}><code>{rd.id}</code></td>
+                    <td style={td}>{rd.model ?? "—"}</td>
+                    <td style={td}>{rd.app ?? "—"}</td>
+                    <td style={td}>{rd.version ?? "—"}</td>
+                    <td style={td}>{fmtWhen(rd.connectedAt)}</td>
+                    <td style={td}>
+                      <RealtimeCommandForm deviceId={rd.id} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {/* Devices */}
       <section style={{ marginTop: 16 }}>
@@ -132,7 +214,7 @@ export default function App() {
           fieldName="apk"
           onDone={refreshAndUpdateConfig}
         />
-        <LaunchHomeButton/>
+        <LaunchHomeButton />
         {!apps ? (
           <p>Loading apps…</p>
         ) : apps.length === 0 ? (
@@ -152,7 +234,7 @@ export default function App() {
                   <tr key={a.id}>
                     <td style={td}><strong>{a.name ?? "—"}</strong></td>
                     <td>
-                      <LaunchAppButton appId={a.id} launchParams={{ test:"test" }} />
+                      <LaunchAppButton appId={a.id} launchParams={{ test: "test" }} />
                     </td>
                     <td>
                       <DeleteAppButton appId={a.id} onDone={refreshAndUpdateConfig} />
@@ -165,34 +247,43 @@ export default function App() {
         )}
       </section>
 
-      {/* Files */}
-      <section style={{ marginTop: 16, marginBottom: 32 }}>
-        <h2>Files</h2>
-        <UploadButton
-          label="Upload File"
-          accept="*/*"                       // change if you want to restrict
-          endpoint="/api/managexr/upload/file"
-          fieldName="file"
-          onDone={refreshAndUpdateConfig}
-        />
-        {!files ? (
-          <p>Loading files…</p>
-        ) : files.length === 0 ? (
-          <p>No files.</p>
+      {/* Assets (GLB + Video) */}
+      <section style={{ marginTop: 16 }}>
+        <h2>Assets</h2>
+        <AssetUploadForm onDone={refreshData} />
+
+        {!assets ? (
+          <p>Loading assets…</p>
+        ) : assets.length === 0 ? (
+          <p>No assets yet.</p>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ borderCollapse: "collapse", minWidth: 720 }}>
+            <table style={{ borderCollapse: "collapse", minWidth: 840 }}>
               <thead>
                 <tr>
                   <th style={th}>Name</th>
+                  <th style={th}>Type</th>
+                  <th style={th}>MIME</th>
                   <th style={th}>Size</th>
+                  <th style={th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {files.map(f => (
-                  <tr key={f.id}>
-                    <td style={td}><strong>{f.name ?? "—"}</strong></td>
-                    <td style={td}>{f.size != null ? `${(f.size / (1024 * 1024)).toFixed(2)} MB` : "—"}</td>
+                {assets.map(a => (
+                  <tr key={a.id}>
+                    <td style={td}><strong>{a.originalFilename}</strong></td>
+                    <td style={td}>{a.type.toUpperCase()}</td>
+                    <td style={td}>{a.mime}</td>
+                    <td style={td}>{formatMB(a.sizeBytes)}</td>
+                    <td style={td}>
+                      {a.type === "video" && (
+                        <>
+                          <a href={a.streamUrl} target="_blank" rel="noreferrer">Stream</a>
+                          {" · "}
+                        </>
+                      )}
+                      <a href={a.downloadUrl} download>Download</a>
+                    </td>
                   </tr>
                 ))}
               </tbody>

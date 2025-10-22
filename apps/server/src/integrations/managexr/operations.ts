@@ -1,5 +1,7 @@
 import { manageXR } from "./client.js";
 import type { Device, App, File} from "../../../../shared/contracts.js";
+import path from "path";
+import { execCli } from "./cli.js";
 
 type MXRDevice = {
     id: string;
@@ -87,4 +89,35 @@ export async function launchAppOnAllDevices(
     deviceIds,
     data: { packageName, ...(launchParams ? { launchParams } : {}) },
   });
+}
+
+
+export async function uploadApp(
+    apkPath: string,
+    options?: {
+        title?: string,
+        description?: string,
+        version?: string,
+    }
+) {
+    const abs = path.resolve(apkPath);
+    const args = ["upload-app", abs];
+    if (options?.title) args.push("--title", options.title);
+    if (options?.description) args.push("--description", options.description);
+    if (options?.version) args.push("--version", options.version);
+    return execCli(args);
+}
+
+export async function uploadFile(
+    filePath: string,
+    options?: {
+        name?: string,
+        description?: string,
+    }
+) {
+    const abs = path.resolve(filePath);
+    const args = ["upload-file", abs];
+    if (options?.name) args.push("--name", options.name);
+    if (options?.description) args.push("--description", options.description);
+    return execCli(args);
 }

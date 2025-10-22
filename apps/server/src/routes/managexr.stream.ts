@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { manageXR } from "../integrations/managexr/client.js";
 
-export const streamTokens = Router();
+export const managexrStream = Router();
 
-streamTokens.post("/token", async (req, res) => {
+managexrStream.post("/streamingToken", async (req, res) => {
   try {
     const { deviceId } = req.body ?? {};
     if (!deviceId) return res.status(400).json({ error: "deviceId required" });

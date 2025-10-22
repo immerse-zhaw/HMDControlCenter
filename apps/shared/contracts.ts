@@ -1,3 +1,5 @@
+import { WebSocket } from "ws";
+
 export type Device = {
     id: string;
     name: string;
@@ -24,3 +26,14 @@ export type File = {
     description: string;
     path: string;
 }
+
+export type DeviceId = string;
+
+export type DeviceInfo = {
+    id: DeviceId;
+    model?: string;
+    app?: string;
+    version?: string;
+    connectedAt: number;
+    ws: WebSocket;
+};

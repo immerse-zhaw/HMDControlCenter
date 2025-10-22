@@ -7,7 +7,7 @@ const HOME_APP_ID = env.MXR_HOME_APP_ID || "com.mightyimmersion.customlauncher.o
 
 export const managexrApps = Router();
 
-managexrApps.delete("/apps/:packageName", async (req, res) => {
+managexrApps.delete("/:packageName", async (req, res) => {
   const pkg = req.params.packageName;
   if (!pkg) return res.status(400).json({ error: "Missing packageName" });
 
