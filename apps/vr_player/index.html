@@ -512,11 +512,25 @@
                 // Upload to ManageXR API
                 const formData = new FormData();
                 formData.append('file', file);
-                
-                const uploadResponse = await fetch(`${SERVER_URL}/api/managexr/upload/file`, {
-                    method: 'POST',
-                    body: formData
-                });
+                let uploadResponse;
+                try {
+                    uploadResponse = await fetch(`${SERVER_URL}/api/managexr/upload/file`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (err) {
+                    glbUploadStatus.style.color = '#f66';
+                    glbUploadStatus.textContent = `No internet connection. Proceeding to launch on headset.`;
+                    setStatus('No internet connection. Proceeding to launch on headset.');
+                    console.error('No internet connection:', err);
+                    // Send to headset via WebSocket anyway
+                    const connectedDevices = getConnectedDevices();
+                    if (connectedDevices.length > 0) {
+                        const payload = JSON.stringify({ action: 'importGLB', name: file.name });
+                        connectedDevices.forEach(device => device.ws.send(payload));
+                    }
+                    return;
+                }
 
                 if (!uploadResponse.ok) {
                     const errorData = await uploadResponse.json().catch(() => ({}));
@@ -547,7 +561,14 @@
             } catch (error) {
                 glbUploadStatus.style.color = '#f66';
                 glbUploadStatus.textContent = `Upload failed: ${error.message}`;
+                setStatus(`Upload failed: ${error.message}`);
                 console.error('GLB upload error:', error);
+                // Still try to launch on headset via WebSocket
+                const connectedDevices = getConnectedDevices();
+                if (connectedDevices.length > 0) {
+                    const payload = JSON.stringify({ action: 'importGLB', name: file.name });
+                    connectedDevices.forEach(device => device.ws.send(payload));
+                }
             }
         }
 
@@ -586,11 +607,25 @@
                 // Upload to ManageXR API
                 const formData = new FormData();
                 formData.append('file', file);
-                
-                const uploadResponse = await fetch(`${SERVER_URL}/api/managexr/upload/file`, {
-                    method: 'POST',
-                    body: formData
-                });
+                let uploadResponse;
+                try {
+                    uploadResponse = await fetch(`${SERVER_URL}/api/managexr/upload/file`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } catch (err) {
+                    videoUploadStatus.style.color = '#f66';
+                    videoUploadStatus.textContent = `No internet connection. Proceeding to launch on headset.`;
+                    setStatus('No internet connection. Proceeding to launch on headset.');
+                    console.error('No internet connection:', err);
+                    // Send to headset via WebSocket anyway
+                    const connectedDevices = getConnectedDevices();
+                    if (connectedDevices.length > 0) {
+                        const payload = JSON.stringify({ action: 'play', path: file.name });
+                        connectedDevices.forEach(device => device.ws.send(payload));
+                    }
+                    return;
+                }
 
                 if (!uploadResponse.ok) {
                     const errorData = await uploadResponse.json().catch(() => ({}));
@@ -623,7 +658,14 @@
             } catch (error) {
                 videoUploadStatus.style.color = '#f66';
                 videoUploadStatus.textContent = `Upload failed: ${error.message}`;
+                setStatus(`Upload failed: ${error.message}`);
                 console.error('Video upload error:', error);
+                // Still try to launch on headset via WebSocket
+                const connectedDevices = getConnectedDevices();
+                if (connectedDevices.length > 0) {
+                    const payload = JSON.stringify({ action: 'play', path: file.name });
+                    connectedDevices.forEach(device => device.ws.send(payload));
+                }
             }
         }
 
