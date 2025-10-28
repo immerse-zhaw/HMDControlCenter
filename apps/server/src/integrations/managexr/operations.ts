@@ -1,6 +1,6 @@
-import { manageXR } from "./client.js";
-import type { Device, App, File} from "../../../../shared/contracts.js";
 import path from "path";
+import { manageXR } from "./client.js";
+import type { Device, App, File} from "../../../../shared/src/contracts.js";
 import { execCli } from "./cli.js";
 
 type MXRDevice = {

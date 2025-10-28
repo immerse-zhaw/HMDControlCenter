@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { DeviceId, DeviceInfo } from "../../../shared/contracts.js";
+import { DeviceId, DeviceInfo } from "../../../shared/src/contracts.js";
 
 const clients = new Map<DeviceId, DeviceInfo>();
 

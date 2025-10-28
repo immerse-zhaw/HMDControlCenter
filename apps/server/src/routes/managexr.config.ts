@@ -1,14 +1,12 @@
 import { listApps, listFiles } from "../integrations/managexr/operations.js";
 import { Router } from "express";
-import { env } from "process";
 import { manageXR } from "../integrations/managexr/client.js";
-
-const DEFAULT_CONFIG_ID = env.MXR_DEFAULT_CONFIG_ID;
+import { env } from "../config/env.js";
 
 export const managexrConfig = Router();
 
 async function patchConfig(body: any) {
-    const r = await manageXR<{ data: any}>("PATCH", `/v1/configurations/${DEFAULT_CONFIG_ID}`, body);
+    const r = await manageXR<{ data: any}>("PATCH", `/v1/configurations/${env.MXR_DEFAULT_CONFIG_ID}`, body);
     return r.data;
 }
 

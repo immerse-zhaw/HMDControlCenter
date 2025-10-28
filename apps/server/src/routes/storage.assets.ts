@@ -3,9 +3,9 @@ import multer from 'multer';
 import crypto from 'crypto';
 import { Readable } from 'stream';
 import { storage } from '../storage/index.js';
-import { env } from 'process';
+import { env } from '../config/env.js';
 
-const MAX_FILE_SIZE = parseInt(env.MAX_UPLOAD_GB || '20', 10) * 1024**3;
+const MAX_FILE_SIZE = env.MAX_UPLOAD_GB * 1024**3;
 
 export const assets = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_FILE_SIZE } });
