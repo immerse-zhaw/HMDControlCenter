@@ -1,9 +1,11 @@
 import { Router } from "express";
-import { listDevices, listApps, listFiles} from "../integrations/managexr/operations.js";
+import { listDevices, listApps, listFiles} from "../../integrations/managexr/operations.js";
 
-export const managexrInfo = Router();
 
-managexrInfo.get("/listDevices", async (req, res) => {
+export const infoRouter = Router();
+
+
+infoRouter.get("/listDevices", async (req, res) => {
   try {
     const devices = await listDevices();
     res.json(devices);
@@ -12,7 +14,8 @@ managexrInfo.get("/listDevices", async (req, res) => {
   }
 });
 
-managexrInfo.get("/listApps", async (req, res) => {
+
+infoRouter.get("/listApps", async (req, res) => {
   try {
     const apps = await listApps();
     res.json(apps);
@@ -21,7 +24,8 @@ managexrInfo.get("/listApps", async (req, res) => {
   }
 });
 
-managexrInfo.get("/listFiles", async (req, res) => {
+
+infoRouter.get("/listFiles", async (req, res) => {
   try {
     const files = await listFiles();
     res.json(files);

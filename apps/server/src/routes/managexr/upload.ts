@@ -1,9 +1,14 @@
-import Router from "express";
 import multer from "multer";
 import os from "node:os";
 import path from "node:path";
+import { Router } from "express";
 import { promises as fs } from "node:fs";
-import { uploadFile, uploadApp } from "../integrations/managexr/operations.js";
+import { uploadFile, uploadApp } from "../../integrations/managexr/operations.js";
+import { env } from "../../config/env.js";
+
+
+export const uploadRouter = Router();
+
 
 const storageKeepExact = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, os.tmpdir()),
@@ -12,19 +17,24 @@ const storageKeepExact = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storageKeepExact });
-export const managexrUploads = Router();
 
-const clean = async (path: string) => {
-    if (!path) {
+const upload = multer({ 
+    storage: storageKeepExact,
+    limits: { fileSize: env.MAX_UPLOAD_GB * 1024 ** 3 },
+});
+
+
+const clean = async (filePath: string) => {
+    if (!filePath) {
         return;
     }
     try {
-        await fs.unlink(path);
+        await fs.unlink(filePath);
     } catch {}
 };
 
-managexrUploads.post("/upload/app", upload.single("apk"), async (req, res) => {
+
+uploadRouter.post("/app", upload.single("apk"), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: "Missing apk file" });
     }
@@ -42,7 +52,8 @@ managexrUploads.post("/upload/app", upload.single("apk"), async (req, res) => {
     }
 });
 
-managexrUploads.post("/upload/file", upload.single("file"), async (req, res) => {
+
+uploadRouter.post("/file", upload.single("file"), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: "Missing file" });
     }

@@ -1,16 +1,18 @@
 import { Router } from "express";
-import { manageXR } from "../integrations/managexr/client.js";
-import { launchAppOnAllDevices } from "../integrations/managexr/operations.js";
-import { env } from "../config/env.js";
+import { manageXR } from "../../integrations/managexr/client.js";
+import { launchAppOnAllDevices } from "../../integrations/managexr/operations.js";
+import { env } from "../../config/env.js";
 
-export const managexrApps = Router();
 
-managexrApps.delete("/:packageName", async (req, res) => {
+export const appsRouter = Router();
+
+
+appsRouter.delete("/:packageName", async (req, res) => {
   const pkg = req.params.packageName;
   if (!pkg) return res.status(400).json({ error: "Missing packageName" });
 
   try {
-    await manageXR("DELETE", `v1/apps/${encodeURIComponent(pkg)}?type=managed`);
+    await manageXR("DELETE", `/apps/${encodeURIComponent(pkg)}?type=managed`);
     res.json({ ok: true, packageName: pkg });
   } catch (e: any) {
     res.status(502).json({ error: e?.message ?? "Delete failed" });
@@ -18,7 +20,7 @@ managexrApps.delete("/:packageName", async (req, res) => {
 });
 
 
-managexrApps.post("/launch-all", async (req, res) => {
+appsRouter.post("/launch-all", async (req, res) => {
   try {
     const { packageName, launchParams } = req.body ?? {};
     if (!packageName) return res.status(400).json({ error: "packageName required" });
@@ -30,7 +32,8 @@ managexrApps.post("/launch-all", async (req, res) => {
   }
 });
 
-managexrApps.post("/home-all", async (req, res) => {
+
+appsRouter.post("/home-all", async (req, res) => {
   try {
     await launchAppOnAllDevices(env.MXR_HOME_APP_ID, {});
     res.json({ ok: true });

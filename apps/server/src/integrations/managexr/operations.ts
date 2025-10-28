@@ -3,6 +3,7 @@ import { manageXR } from "./client.js";
 import type { Device, App, File} from "../../../../shared/src/contracts.js";
 import { execCli } from "./cli.js";
 
+
 type MXRDevice = {
     id: string;
     name: string;
@@ -33,8 +34,9 @@ type MXRFile = {
     libraryDirectoryPath: string;
 }
 
+
 export async function listDevices(): Promise<Device[]> {
-    const raw = await manageXR<{ data?: MXRDevice[] }>("GET", "/v1/devices");
+    const raw = await manageXR<{ data?: MXRDevice[] }>("GET", "/devices");
     const items: MXRDevice[] = Array.isArray(raw?.data) ? raw!.data! : [];
 
     return (items).map(d => ({
@@ -49,8 +51,9 @@ export async function listDevices(): Promise<Device[]> {
     }));
 }
 
+
 export async function listApps(): Promise<App[]> {
-    const raw = await manageXR<{ data?: MXRApp[] }>("GET", "/v1/apps");
+    const raw = await manageXR<{ data?: MXRApp[] }>("GET", "/apps");
     const items: MXRApp[] = Array.isArray(raw?.data) ? raw!.data! : [];
 
     return (items).map(a => ({
@@ -60,8 +63,9 @@ export async function listApps(): Promise<App[]> {
     }));
 }
 
+
 export async function listFiles(): Promise<File[]> {
-    const raw = await manageXR<{ data?: MXRFile[] }>("GET", "/v1/files");
+    const raw = await manageXR<{ data?: MXRFile[] }>("GET", "/files");
     const items: MXRFile[] = Array.isArray(raw?.data) ? raw!.data! : [];
     
     return (items).map(f => ({
@@ -75,6 +79,7 @@ export async function listFiles(): Promise<File[]> {
     }));
 }
 
+
 export async function launchAppOnAllDevices(
   packageName: string,
   launchParams?: Record<string, unknown>
@@ -84,7 +89,7 @@ export async function launchAppOnAllDevices(
   const deviceIds = devices.map(d => d.id);
   if (!deviceIds.length) throw new Error("No devices found");
 
-  return manageXR("POST", "/v1/devices/batch-command", {
+  return manageXR("POST", "/devices/batch-command", {
     action: "LAUNCH_APP",
     deviceIds,
     data: { packageName, ...(launchParams ? { launchParams } : {}) },
@@ -107,6 +112,7 @@ export async function uploadApp(
     if (options?.version) args.push("--version", options.version);
     return execCli(args);
 }
+
 
 export async function uploadFile(
     filePath: string,

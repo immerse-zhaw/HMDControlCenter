@@ -20,7 +20,7 @@ export function AssetUploadForm({ onDone }: { onDone: () => void }) {
 
     // use XHR to get upload progress
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/assets/upload');
+    xhr.open('POST', '/api/storage/assets/upload');
     xhr.upload.onprogress = (evt) => {
       if (evt.lengthComputable) setProgress(Math.round(100 * evt.loaded / evt.total));
     };

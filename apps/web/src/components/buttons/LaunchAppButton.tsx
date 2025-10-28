@@ -18,7 +18,7 @@ export function LaunchAppButton({
         if (busy) return;
         setBusy(true); setMsg("Launching…");
         try {
-            const r = await fetch("/api/managexr/launch-all", {
+            const r = await fetch("/api/managexr/apps/launch-all", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ packageName: appId, launchParams }),
@@ -59,7 +59,7 @@ export function LaunchHomeButton({
         if (busy) return;
         setBusy(true); setMsg("Launching…");
         try {
-            const r = await fetch("/api/managexr/home-all", {
+            const r = await fetch("/api/managexr/apps/home-all", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
             });

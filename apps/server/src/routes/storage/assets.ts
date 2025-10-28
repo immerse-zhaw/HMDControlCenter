@@ -1,16 +1,17 @@
-import express from 'express';
+import express, { Router } from 'express';
 import multer from 'multer';
 import crypto from 'crypto';
-import { Readable } from 'stream';
-import { storage } from '../storage/index.js';
-import { env } from '../config/env.js';
+import { storage } from '../../storage/index.js';
+import { env } from '../../config/env.js';
+
 
 const MAX_FILE_SIZE = env.MAX_UPLOAD_GB * 1024**3;
 
-export const assets = express.Router();
+
+export const assetsRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_FILE_SIZE } });
 
-// ---------- helpers over your Storage ----------
+
 async function readJson<T>(key: string, fallback: T): Promise<T> {
   const exists = await storage.exists(key);
   if (!exists) return fallback;
@@ -24,16 +25,13 @@ async function readJson<T>(key: string, fallback: T): Promise<T> {
   catch { return fallback; }
 }
 
+
 async function writeJson(key: string, data: any) {
   const body = Buffer.from(JSON.stringify(data, null, 2), 'utf8');
   await storage.put({ key, contentType: 'application/json', body });
 }
 
-function bufferToStream(buf: Buffer): Readable {
-  return Readable.from(buf);
-}
 
-// ---------- models stored in JSON ----------
 type AssetMeta = {
   id: string;
   type: 'glb' | 'video';
@@ -42,6 +40,7 @@ type AssetMeta = {
   sizeBytes: number;
   sha256: string;
 };
+
 
 type Job = {
   id: string;
@@ -52,11 +51,12 @@ type Job = {
   progress: number;
 };
 
+
 const ASSET_INDEX_KEY = 'assets/index.json';
 const JOBS_INDEX_KEY  = 'jobs/index.json';
 
-// ---------- routes ----------
-assets.post('/upload', upload.single('file'), async (req, res) => {
+
+assetsRouter.post('/upload', upload.single('file'), async (req, res) => {
   const type = req.body.type as 'glb' | 'video' | undefined;
   if (!req.file || !type) return res.status(400).json({ error: 'file + type required' });
 
@@ -68,10 +68,8 @@ assets.post('/upload', upload.single('file'), async (req, res) => {
   const fileKey = `assets/${id}/file`;
   const metaKey = `assets/${id}/meta.json`;
 
-  // store file via your Storage
   await storage.put({ key: fileKey, contentType: mimetype, body: buffer });
 
-  // compute sha
   const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
   const meta: AssetMeta = {
     id, type,
@@ -83,32 +81,33 @@ assets.post('/upload', upload.single('file'), async (req, res) => {
 
   await writeJson(metaKey, meta);
 
-  // update assets index
   const index = await readJson<Record<string, Omit<AssetMeta, 'sha256'>>> (ASSET_INDEX_KEY, {});
   index[id] = { id, type, originalFilename: originalname, mime: mimetype, sizeBytes: buffer.length };
   await writeJson(ASSET_INDEX_KEY, index);
 
-  res.json({ ...meta, streamUrl: `/api/assets/${id}/stream`, downloadUrl: `/api/assets/${id}/download` });
+  res.json({ ...meta, streamUrl: `/api/storage/assets/${id}/stream`, downloadUrl: `/api/storage/assets/${id}/download` });
 });
 
-assets.get('/', async (_req, res) => {
+
+assetsRouter.get('/listAssets', async (_req, res) => {
   const index = await readJson<Record<string, any>>(ASSET_INDEX_KEY, {});
   const list = Object.values(index).map((a: any) => ({
     ...a,
-    streamUrl: `/api/assets/${a.id}/stream`,
-    downloadUrl: `/api/assets/${a.id}/download`,
+    streamUrl: `/api/storage/assets/${a.id}/stream`,
+    downloadUrl: `/api/storage/assets/${a.id}/download`,
   }));
   res.json(list);
 });
 
-assets.get('/:id', async (req, res) => {
+
+assetsRouter.get('/:id', async (req, res) => {
   const meta = await readJson<AssetMeta | null>(`assets/${req.params.id}/meta.json`, null);
   if (!meta) return res.sendStatus(404);
-  res.json({ ...meta, streamUrl: `/api/assets/${meta.id}/stream`, downloadUrl: `/api/assets/${meta.id}/download` });
+  res.json({ ...meta, streamUrl: `/api/storage/assets/${meta.id}/stream`, downloadUrl: `/api/storage/assets/${meta.id}/download` });
 });
 
-// raw download (GLB or any video)
-assets.get('/:id/download', async (req, res) => {
+
+assetsRouter.get('/:id/download', async (req, res) => {
   const id = req.params.id;
   const meta = await readJson<AssetMeta | null>(`assets/${id}/meta.json`, null);
   if (!meta) return res.sendStatus(404);
@@ -120,8 +119,8 @@ assets.get('/:id/download', async (req, res) => {
   storage.getStream(fileKey).pipe(res);
 });
 
-// generic byte-range streaming for ANY file type
-assets.get('/:id/stream', async (req, res) => {
+
+assetsRouter.get('/:id/stream', async (req, res) => {
   const id = req.params.id;
   const meta = await readJson<AssetMeta | null>(`assets/${id}/meta.json`, null);
   if (!meta) return res.sendStatus(404);
@@ -154,8 +153,8 @@ assets.get('/:id/stream', async (req, res) => {
   storage.getStream(fileKey, { start, end }).pipe(res);
 });
 
-/** ---------------- device jobs (JSON over Storage) ---------------- **/
-assets.post('/devices/:deviceId/jobs', express.json(), async (req, res) => {
+
+assetsRouter.post('/devices/:deviceId/jobs', express.json(), async (req, res) => {
   const { deviceId } = req.params;
   const { assetId, action } = req.body as { assetId: string; action: 'download' | 'delete' };
 
@@ -167,7 +166,8 @@ assets.post('/devices/:deviceId/jobs', express.json(), async (req, res) => {
   res.json(job);
 });
 
-assets.get('/devices/:deviceId/jobs/next', async (req, res) => {
+
+assetsRouter.get('/devices/:deviceId/jobs/next', async (req, res) => {
   const { deviceId } = req.params;
   const jobs = await readJson<Job[]>(JOBS_INDEX_KEY, []);
   const job = jobs.find(j => j.deviceId === deviceId && j.status === 'queued');
@@ -177,8 +177,8 @@ assets.get('/devices/:deviceId/jobs/next', async (req, res) => {
   if (!meta) return res.json({ job: null });
 
   const downloadUrl = meta.type === 'video'
-    ? `/api/assets/${meta.id}/stream`
-    : `/api/assets/${meta.id}/download`;
+    ? `/api/storage/assets/${meta.id}/stream`
+    : `/api/storage/assets/${meta.id}/download`;
 
   res.json({
     job: {
@@ -196,7 +196,8 @@ assets.get('/devices/:deviceId/jobs/next', async (req, res) => {
   });
 });
 
-assets.post('/devices/:deviceId/jobs/:jobId/progress', express.json(), async (req, res) => {
+
+assetsRouter.post('/devices/:deviceId/jobs/:jobId/progress', express.json(), async (req, res) => {
   const { jobId } = req.params;
   const { progress } = req.body as { progress: number };
   const jobs = await readJson<Job[]>(JOBS_INDEX_KEY, []);
@@ -205,7 +206,8 @@ assets.post('/devices/:deviceId/jobs/:jobId/progress', express.json(), async (re
   res.json({ ok: true });
 });
 
-assets.post('/devices/:deviceId/jobs/:jobId/complete', express.json(), async (req, res) => {
+
+assetsRouter.post('/devices/:deviceId/jobs/:jobId/complete', express.json(), async (req, res) => {
   const { jobId } = req.params;
   const { success } = req.body as { success: boolean };
   const jobs = await readJson<Job[]>(JOBS_INDEX_KEY, []);

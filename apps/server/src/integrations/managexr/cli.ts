@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { env } from "../../config/env.js";
 
+
 export async function execCli(args: string[]): Promise<string> {
     args.push("--api-key-file", env.MXR_KEY_PATH);
     console.log(`Executing: ${env.MXR_CLI} ${args.join(" ")}`);

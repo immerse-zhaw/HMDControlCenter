@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import type { Device, App, File, DeviceInfo } from "../../shared/contracts.js";
-import { UploadButton } from "./UploadButton.js";
-import { DeleteAppButton } from "./DeleteAppButton.js";
-import { LaunchAppButton, LaunchHomeButton } from "./LaunchAppButton.js";
-import { StreamButton } from "./StreamButton.js";
-import { AssetUploadForm } from "./UploadAssetForm.js";
-import { RealtimeCommandForm } from "./RealtimeCommandForm.js";
+import type { Device, App, File, DeviceInfo } from "../../../shared/src/contracts.js";
+import { UploadButton } from "../components/buttons/UploadButton.js";
+import { DeleteAppButton } from "../components/buttons/DeleteAppButton.js";
+import { LaunchAppButton, LaunchHomeButton } from "../components/buttons/LaunchAppButton.js";
+import { StreamButton } from "../components/buttons/StreamButton.js";
+import { AssetUploadForm } from "../components/forms/UploadAssetForm.js";
+import { RealtimeCommandForm } from "../components/forms/RealtimeCommandForm.js";
 
 type RealtimeDevice = Omit<DeviceInfo, "ws">;
 
@@ -15,8 +15,8 @@ type Asset = {
   originalFilename: string;
   mime: string;
   sizeBytes: number;
-  streamUrl: string;    // /api/assets/:id/stream
-  downloadUrl: string;  // /api/assets/:id/download
+  streamUrl: string;    // /api/storage/assets/:id/stream
+  downloadUrl: string;  // /api/storage/assets/:id/download
 };
 
 function statusIcon(d: Device) {
@@ -61,11 +61,11 @@ export default function App() {
   async function refreshData() {
     try {
       const [devRes, appRes, fileRes, assetRes, rtRes] = await Promise.all([
-        fetch("/api/managexr/listDevices"),
-        fetch("/api/managexr/listApps"),
-        fetch("/api/managexr/listFiles"),
-        fetch("/api/assets"),
-        fetch("/api/realtime"),
+        fetch("/api/managexr/info/listDevices"),
+        fetch("/api/managexr/info/listApps"),
+        fetch("/api/managexr/info/listFiles"),
+        fetch("/api/storage/assets/listAssets"),
+        fetch("/api/realtime/clients/listClients"),
       ]);
       if (!devRes.ok) throw new Error(`Failed to fetch devices: ${devRes.status} ${await devRes.text()}`);
       if (!appRes.ok) throw new Error(`Failed to fetch apps: ${appRes.status} ${await appRes.text()}`);
@@ -104,7 +104,7 @@ export default function App() {
   async function refreshAndUpdateConfig() {
     try {
       setUpdateConfig(true);
-      const r = await fetch("/api/managexr/updateConfig", { method: "POST" });
+      const r = await fetch("/api/managexr/config/updateConfig", { method: "POST" });
       if (!r.ok) throw new Error(`Failed to update config: ${r.status} ${await r.text()}`);
       await refreshData();
     } catch (e) {
@@ -263,7 +263,6 @@ export default function App() {
                 <tr>
                   <th style={th}>Name</th>
                   <th style={th}>Type</th>
-                  <th style={th}>MIME</th>
                   <th style={th}>Size</th>
                   <th style={th}>Actions</th>
                 </tr>
@@ -273,7 +272,6 @@ export default function App() {
                   <tr key={a.id}>
                     <td style={td}><strong>{a.originalFilename}</strong></td>
                     <td style={td}>{a.type.toUpperCase()}</td>
-                    <td style={td}>{a.mime}</td>
                     <td style={td}>{formatMB(a.sizeBytes)}</td>
                     <td style={td}>
                       {a.type === "video" && (

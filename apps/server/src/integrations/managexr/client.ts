@@ -1,6 +1,7 @@
 import { env } from "../../config/env.js";
 import { loadManageXRKey, basicAuthHeader } from "../../config/managexrKey.js";
 
+
 let authHeaderPromise: Promise<string> | null = null;
 async function getAuthHeader(): Promise<string> {
     if (!authHeaderPromise) {
@@ -9,12 +10,13 @@ async function getAuthHeader(): Promise<string> {
     return authHeaderPromise;
 }
 
+
 export async function manageXR<T>(
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", 
     path: string, 
     json?: unknown
 ): Promise<T> {
-    const url = new URL(path, env.API).toString();
+    const url = new URL(env.API_VERSION + path, env.API).toString();
 
     const headers: Record<string, string> = { Authorization: await getAuthHeader() };
     if (json !== undefined) headers["Content-Type"] = "application/json";
