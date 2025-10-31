@@ -8,14 +8,14 @@ type Props = {
 
 /**
  * Small form to send a realtime command to a device.
- * Posts to /api/realtime/:id/command with a JSON body.
+ * Posts to /api/realtime/clients/:id/command with a JSON body.
  */
 export function RealtimeCommandForm({ deviceId, defaultType = "playVideo", style }: Props) {
   const [type, setType] = useState<"playVideo" | "pauseVideo" | "resumeVideo" | "stopVideo" | "openGlb" | "closeGlb" | "raw">(defaultType);
   const [input, setInput] = useState("");
 
   async function send(cmd: unknown) {
-    const res = await fetch(`/api/realtime/${encodeURIComponent(deviceId)}/command`, {
+    const res = await fetch(`/api/realtime/clients/${encodeURIComponent(deviceId)}/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cmd),
@@ -31,7 +31,7 @@ export function RealtimeCommandForm({ deviceId, defaultType = "playVideo", style
       if (type === "playVideo") {
         const url = input.trim();
         if (!url) throw new Error("Enter a video URL.");
-        await send({ type: "video.play", url, projection: "360", stereo: "mono", startTime: 0 });
+        await send({ type: "video.play", url, mapping: "equirectangular", projection: "360", stereo: "mono", startTime: 0 });
       } else if (type === "pauseVideo") {
         await send({ type: "video.pause" });
       } else if (type === "resumeVideo") {

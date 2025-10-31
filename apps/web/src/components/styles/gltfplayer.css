@@ -1,0 +1,43 @@
+/* ---- GLTFPlayer sliders: neutral grey/white across browsers ---- */
+.gltf-slider input[type="range"]{
+  -webkit-appearance:none; appearance:none;
+  width:140px; background:transparent; outline:none;
+  /* kill the default blue in Chrome/Edge */
+  accent-color:#9ca3af; /* gray-400 */
+}
+
+/* Track */
+.gltf-slider input[type="range"]::-webkit-slider-runnable-track{
+  height:4px; background:#e5e7eb; /* gray-200 */
+  border-radius:9999px;
+}
+.gltf-slider input[type="range"]::-moz-range-track{
+  height:4px; background:#e5e7eb; border-radius:9999px;
+}
+
+/* Filled portion (Firefox) */
+.gltf-slider input[type="range"]::-moz-range-progress{
+  height:4px; background:#9ca3af; border-radius:9999px;
+}
+
+/* Thumb */
+.gltf-slider input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none;
+  width:16px; height:16px; border-radius:50%;
+  background:#f3f4f6; /* gray-100 */
+  border:1px solid #9ca3af; /* gray-400 */
+  margin-top:-6px; /* center on 4px track */
+}
+.gltf-slider input[type="range"]::-moz-range-thumb{
+  width:16px; height:16px; border-radius:50%;
+  background:#f3f4f6; border:1px solid #9ca3af;
+}
+
+/* Disabled thumb */
+.gltf-slider input[type="range"]:disabled::-webkit-slider-thumb,
+.gltf-slider input[type="range"]:disabled::-moz-range-thumb{
+  background:#e5e7eb; border-color:#d1d5db; /* gray-200/300 */
+}
+
+/* Labels/values */
+.gltf-slider label,.gltf-slider span{ font-size:12px; }

@@ -4,8 +4,10 @@ import { UploadButton } from "../components/buttons/UploadButton.js";
 import { DeleteAppButton } from "../components/buttons/DeleteAppButton.js";
 import { LaunchAppButton, LaunchHomeButton } from "../components/buttons/LaunchAppButton.js";
 import { StreamButton } from "../components/buttons/StreamButton.js";
-import { AssetUploadForm } from "../components/forms/UploadAssetForm.js";
+import { UploadGlbButton, UploadVideoButton } from "../components/buttons/UploadAssetsButton.js";
 import { RealtimeCommandForm } from "../components/forms/RealtimeCommandForm.js";
+import VideoPlayerButton from "../components/buttons/VideoPlayerButton.js";
+import OpenGlbButton from "../components/buttons/OpenGlbButton.js"
 
 type RealtimeDevice = Omit<DeviceInfo, "ws">;
 
@@ -214,7 +216,6 @@ export default function App() {
           fieldName="apk"
           onDone={refreshAndUpdateConfig}
         />
-        <LaunchHomeButton />
         {!apps ? (
           <p>Loading apps…</p>
         ) : apps.length === 0 ? (
@@ -234,7 +235,7 @@ export default function App() {
                   <tr key={a.id}>
                     <td style={td}><strong>{a.name ?? "—"}</strong></td>
                     <td>
-                      <LaunchAppButton appId={a.id} launchParams={{ test: "test" }} />
+                      <LaunchAppButton appId={a.id}/>
                     </td>
                     <td>
                       <DeleteAppButton appId={a.id} onDone={refreshAndUpdateConfig} />
@@ -245,12 +246,14 @@ export default function App() {
             </table>
           </div>
         )}
+        <LaunchHomeButton />
       </section>
 
       {/* Assets (GLB + Video) */}
       <section style={{ marginTop: 16 }}>
         <h2>Assets</h2>
-        <AssetUploadForm onDone={refreshData} />
+        <UploadVideoButton onDone={refreshData} maxBytes={20 * 1024**3} />
+        <UploadGlbButton onDone={refreshData} maxBytes={1 * 1024**3} />
 
         {!assets ? (
           <p>Loading assets…</p>
@@ -274,13 +277,12 @@ export default function App() {
                     <td style={td}>{a.type.toUpperCase()}</td>
                     <td style={td}>{formatMB(a.sizeBytes)}</td>
                     <td style={td}>
-                      {a.type === "video" && (
-                        <>
-                          <a href={a.streamUrl} target="_blank" rel="noreferrer">Stream</a>
-                          {" · "}
-                        </>
-                      )}
-                      <a href={a.downloadUrl} download>Download</a>
+                      {a.type === "video" &&
+                        <VideoPlayerButton src={a.streamUrl} width={window.innerWidth * 0.75} height={(window.innerWidth * 0.75) * 9 / 16} />
+                      }
+                      {a.type === "glb" &&
+                        <OpenGlbButton src={a.downloadUrl} width={window.innerWidth * 0.75} height={(window.innerWidth * 0.75) * 9 / 16} />
+                      }
                     </td>
                   </tr>
                 ))}

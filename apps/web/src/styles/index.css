@@ -1,3 +1,11 @@
+/* @import "video.js/dist/video-js.css";
+@import "videojs-vr/dist/videojs-vr.css";
+
+.vjs-vr {
+  width: 100%;
+  height: 100%;
+} */
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

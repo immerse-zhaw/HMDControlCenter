@@ -2,34 +2,30 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useDeviceStream } from "@managexr/react-streaming";
 
+
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return createPortal(
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
-      display: "grid", placeItems: "center", zIndex: 9999
-    }}>
-      {children}
-      <button
-        onClick={onClose}
-        style={{
-          position: "fixed", top: 16, right: 16, zIndex: 10000,
-          background: "rgba(0,0,0,0.6)", color: "#fff", border: 0, padding: "8px 12px", borderRadius: 8
-        }}
-      >
-        Close
-      </button>
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "grid", placeItems: "center", zIndex: 9999 }}
+    >
+      <div onClick={(e) => e.stopPropagation()}>
+        {children}
+        <button type="button" onClick={onClose} /* ...styles */>Close</button>
+      </div>
     </div>,
     document.body
   );
 }
 
-export function StreamButton({
-  deviceId,
-  label = "Stream",
-}: {
-  deviceId: string;
-  label?: string;
-}) {
+
+export function StreamButton({ deviceId, label = "Stream" }: { deviceId: string; label?: string }) {
   const [open, setOpen] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -41,11 +37,9 @@ export function StreamButton({
       setErr(null);
       try {
         const r = await fetch("/api/managexr/stream/streamingToken", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ deviceId }),
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deviceId }),
         });
-        const j = await r.json();
+        const j = await r.json().catch(() => ({}));
         if (!r.ok || !j?.token) throw new Error(j?.error || `HTTP ${r.status}`);
         if (!cancelled) setToken(j.token);
       } catch (e: any) {
@@ -57,7 +51,7 @@ export function StreamButton({
 
   return (
     <>
-      <button onClick={() => setOpen(true)}>{label}</button>
+      <button type="button" onClick={() => setOpen(true)}>{label}</button>
       {open && (
         <Modal onClose={() => setOpen(false)}>
           {!token && !err && <p style={{ color: "#fff" }}>Preparing stream…</p>}
@@ -70,38 +64,21 @@ export function StreamButton({
 }
 
 function StreamPlayer({ deviceId, token }: { deviceId: string; token: string }) {
-  const { videoRef, status, retryStream } =
-    useDeviceStream(deviceId, token, { endOtherStreamAutomatically: true });
-
+  const { videoRef, status, retryStream } = useDeviceStream(deviceId, token, { endOtherStreamAutomatically: true });
   const retries = useRef(0);
+
   useEffect(() => {
     const s = String(status || "");
     if ((/^error_/i.test(s) || /ended|stopped/i.test(s)) && retries.current < 5) {
-      const t = setTimeout(() => { retries.current += 1; retryStream(); }, 1200);
-      return () => clearTimeout(t);
+      const t = window.setTimeout(() => { retries.current += 1; retryStream(); }, 1200);
+      return () => window.clearTimeout(t);
     }
     if (/connected/i.test(s)) retries.current = 0;
   }, [status, retryStream]);
 
-  const frameStyle: React.CSSProperties = {
-    width: "min(92vw, calc(92vh * (16 / 9)))",
-    aspectRatio: "16 / 9",
-    background: "#000",
-    borderRadius: 12,
-    overflow: "hidden",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.45)",
-  };
-
   return (
-    <div style={frameStyle}>
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        // fill the 16:9 frame exactly
-        style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", background: "#000" }}
-      />
+    <div style={{ width: "min(92vw, calc(92vh * (16 / 9)))", aspectRatio: "16 / 9", background: "#000", borderRadius: 12, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,0.45)" }}>
+      <video ref={videoRef} autoPlay muted playsInline style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", background: "#000" }} />
     </div>
   );
 }
