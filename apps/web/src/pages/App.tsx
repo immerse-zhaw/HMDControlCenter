@@ -8,6 +8,7 @@ import { UploadGlbButton, UploadVideoButton } from "../components/buttons/Upload
 import { RealtimeCommandForm } from "../components/forms/RealtimeCommandForm.js";
 import VideoPlayerButton from "../components/buttons/VideoPlayerButton.js";
 import OpenGlbButton from "../components/buttons/OpenGlbButton.js"
+import { DeleteAssetButton } from "../components/buttons/DeleteAssetButton.js";
 
 type RealtimeDevice = Omit<DeviceInfo, "ws">;
 
@@ -278,11 +279,12 @@ export default function App() {
                     <td style={td}>{formatMB(a.sizeBytes)}</td>
                     <td style={td}>
                       {a.type === "video" &&
-                        <VideoPlayerButton src={a.streamUrl} width={window.innerWidth * 0.75} height={(window.innerWidth * 0.75) * 9 / 16} />
+                        <VideoPlayerButton assetId={a.id} width={window.innerWidth * 0.75} height={(window.innerWidth * 0.75) * 9 / 16} />
                       }
                       {a.type === "glb" &&
                         <OpenGlbButton src={a.downloadUrl} width={window.innerWidth * 0.75} height={(window.innerWidth * 0.75) * 9 / 16} />
                       }
+                      <DeleteAssetButton assetId={a.id} onDeleted={refreshData} />
                     </td>
                   </tr>
                 ))}

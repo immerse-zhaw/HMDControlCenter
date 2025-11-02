@@ -1,11 +1,11 @@
 export interface ByteRange {
-  start?: number;
-  end?: number;
+    start?: number;
+    end?: number;
 }
 
 export interface StorageHeader {
     contentLength: number;
-    contentType: string;
+    contentType?: string;
 }
 
 export interface Storage {
@@ -15,8 +15,9 @@ export interface Storage {
         body: Buffer | NodeJS.ReadableStream;
         cacheControl?: string;
     }): Promise<{ key: string }>;
-    getStream( key: string, range?: ByteRange
-    ): NodeJS.ReadableStream;
-    head(key: string): Promise<StorageHeader>;
+    getStream(key: string, range?: ByteRange): NodeJS.ReadableStream;
+    head(key: string): Promise<StorageHeader | null>;
     exists(key: string): Promise<boolean>;
+    delete(key: string): Promise<void>;
+    deleteTree(prefix: string): Promise<void>;
 }

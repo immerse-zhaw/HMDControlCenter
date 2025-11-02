@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-
 export function DeleteAppButton({
   label = "Delete",
   appId,
@@ -34,10 +33,10 @@ export function DeleteAppButton({
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <button type="button" onClick={onDeleteApp} disabled={busy} aria-busy={busy}>
+      <button className="btn btn--danger" type="button" onClick={onDeleteApp} disabled={busy} aria-busy={busy}>
         {busy ? "Deleting…" : label}
       </button>
-      {message && <small aria-live="polite">{message}</small>}
+      {message && <small role="status" aria-live="polite">{message}</small>}
     </span>
   );
 }

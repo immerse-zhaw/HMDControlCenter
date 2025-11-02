@@ -8,13 +8,6 @@ export interface OpenGLBButtonProps {
   height?: number;
   portalContainer?: Element | null;
   buttonLabel?: string;
-
-  // Point-cloud control passthrough
-  initialPointSize?: number;
-  minPointSize?: number;
-  maxPointSize?: number;
-  pointSizeStep?: number;
-
   disableZoom?: boolean;
 }
 
@@ -24,8 +17,7 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
   height = 405,
   portalContainer,
   buttonLabel = "▶",
-
-  disableZoom = true ,
+  disableZoom = false,
 }) => {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -38,7 +30,6 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
   const onOpen = useCallback(() => setOpen(true), []);
   const onClose = useCallback(() => setOpen(false), []);
 
-  // ESC to close
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -46,7 +37,6 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Prevent body scroll while open
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -57,10 +47,12 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
   return (
     <>
       <button
+        className="btn btn--icon"
         type="button"
         onClick={onOpen}
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label="Open 3D model"
       >
         {buttonLabel}
       </button>
@@ -69,38 +61,17 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
         <div
           ref={overlayRef}
           role="presentation"
-          onMouseDown={(e) => {
-            if (e.target === overlayRef.current) onClose();
-          }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 9999,
-            display: "grid",
-            placeItems: "center",
-            padding: 16,
-          }}
+          onMouseDown={(e) => { if (e.target === overlayRef.current) onClose(); }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "grid", placeItems: "center", padding: 16 }}
         >
           <div
             role="dialog"
             aria-modal="true"
             onMouseDown={(e) => e.stopPropagation()}
-            style={{
-              background: "#0b0b0b",
-              borderRadius: 6,
-              boxShadow: "0 16px 48px rgba(0,0,0,0.35)",
-              width,
-              maxWidth: "95vw",
-            }}
+            style={{ background: "#0b0b0b", borderRadius: 6, boxShadow: "0 16px 48px rgba(0,0,0,0.35)", width, maxWidth: "95vw" }}
           >
             <div style={{ width: "100%", height, background: "#000" }}>
-              <GLTFPlayer
-                src={src}
-                width={width}
-                height={height}
-                disableZoom={disableZoom}
-              />
+              <GLTFPlayer src={src} width={width} height={height} disableZoom={disableZoom} />
             </div>
           </div>
         </div>,

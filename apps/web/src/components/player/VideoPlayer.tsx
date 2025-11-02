@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import videojs from "video.js";
 import "video.js/dist/video-js.css";
-// Your patched plugin (keep this as-is in your project)
 import "../../../vendor/videojs-vr";
 
 // ---------- config ----------
@@ -54,15 +53,11 @@ if (typeof document !== "undefined" && !(videojs as any).getComponent("Projectio
       this.projection = projection;
     }
     handleClick() {
-      // Clear sibling selections
       const cb: any = this.player().getChild("controlBar");
       const btn: any = cb?.getChild("ProjectionMenuButton");
       btn?.items?.forEach((i: any) => i.selected(false));
       this.selected(true);
-
-      // Use Video.js event bus instead of DOM CustomEvent
       this.player().trigger("projection:select", { projection: this.projection });
-
       super.handleClick();
     }
   }
@@ -70,27 +65,18 @@ if (typeof document !== "undefined" && !(videojs as any).getComponent("Projectio
   class ProjectionMenuButton extends (MenuButton as any) {
     items!: ProjectionMenuItem[];
     current: Projection;
-
     constructor(player: videojs.Player, options: any = {}) {
       super(player, options);
       this.current = options.initialProjection || "NONE";
       this.controlText("Projection");
     }
-
     buildCSSClass() {
       const base = super.buildCSSClass?.() || "";
       return `vjs-projection-menu-button vjs-menu-button vjs-menu-button-popup vjs-control vjs-button vjs-icon-cog ${base}`;
     }
-
     createItems() {
-      // Trim to your preferred set; add others if needed
-      const projections: Projection[] = [
-        "NONE", "180", "180_LR", "360", "360_LR", "360_TB", "Cube",
-        // "EAC", "EAC_LR",
-      ];
-      this.items = projections.map(
-        (p) => new ProjectionMenuItem(this.player(), p, p === this.current)
-      );
+      const projections: Projection[] = ["NONE", "180", "180_LR", "360", "360_LR", "360_TB", "Cube"];
+      this.items = projections.map((p) => new ProjectionMenuItem(this.player(), p, p === this.current));
       return this.items;
     }
   }
@@ -101,7 +87,7 @@ if (typeof document !== "undefined" && !(videojs as any).getComponent("Projectio
 
 // ---------- React component ----------
 interface VideoPlayerProps {
-  src: string;
+  src: string;           // final URL to play (m3u8 or mp4)
   width?: number;
   height?: number;
   initialProjection?: Projection;
@@ -119,9 +105,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // (Re)build player whenever src or projection changes
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !src) return;
 
-    // Dispose old player
     if (playerRef.current) {
       try { playerRef.current.dispose(); } catch {}
       playerRef.current = null;
@@ -133,40 +118,30 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     videoEl.playsInline = true;
     videoEl.setAttribute("playsinline", "true");
     videoEl.crossOrigin = "anonymous";
-    // ensure muted inline autoplay compatibility
     videoEl.muted = true;
     videoEl.setAttribute("muted", "");
     videoEl.style.width = "100%";
     videoEl.style.height = "100%";
     containerRef.current.appendChild(videoEl);
 
-    // Init player
     const player = videojs(videoEl, {
       controls: true,
       preload: "auto",
-      autoplay: true,        // request autoplay
-      muted: true,           // required for most browsers
+      autoplay: true,
+      muted: true,
       width,
       height,
-      sources: [
-        { src, type: src.endsWith(".m3u8") ? "application/x-mpegURL" : "video/mp4" },
-      ],
+      sources: [{ src, type: src.endsWith(".m3u8") ? "application/x-mpegURL" : "video/mp4" }],
       controlBar: {
         children: [
-          "playToggle",
-          "currentTimeDisplay",
-          "progressControl",
-          "durationDisplay",
-          "volumePanel",
-          "ProjectionMenuButton",
-          "fullscreenToggle",
+          "playToggle", "currentTimeDisplay", "progressControl", "durationDisplay",
+          "volumePanel", "ProjectionMenuButton", "fullscreenToggle",
         ],
       },
     }) as videojs.Player;
 
     playerRef.current = player;
 
-    // Sync initial selection in the menu
     const cb: any = player.getChild("controlBar");
     const btn: any = cb?.getChild("ProjectionMenuButton");
     if (btn) {
@@ -174,12 +149,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       btn.items?.forEach((i: any) => i.selected(i.projection === projection));
     }
 
-    // Init VR plugin with current projection (call once per instance)
     player.ready(() => {
-      // force muted + attempt playback (gracefully ignore block)
       try { player.muted(true); } catch {}
       try { player.play()?.catch(() => {}); } catch {}
-
       const anyPlayer = player as any;
       if (typeof anyPlayer.vr === "function") {
         anyPlayer.vr({ projection, debug: false, forceCardboard: false });
@@ -188,13 +160,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
     });
 
-    // Listen for projection changes via Video.js event bus
     const onSelect = (_e: any, data: { projection?: Projection }) => {
       if (data?.projection) setProjection(data.projection);
     };
     player.on("projection:select", onSelect);
 
-    // Cleanup
     return () => {
       player.off("projection:select", onSelect);
       try { player.dispose(); } catch {}
@@ -202,12 +172,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
   }, [src, projection, width, height]);
 
-  return (
-    <div
-      ref={containerRef}
-      style={{ width, height, background: "#000", position: "relative" }}
-    />
-  );
+  return <div ref={containerRef} style={{ width, height, background: "#000", position: "relative" }} />;
 };
 
 export default VideoPlayer;

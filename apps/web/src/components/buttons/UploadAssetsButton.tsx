@@ -1,10 +1,14 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 type Props = {
   label?: string;
   onDone?: () => void;
   maxBytes?: number;
 };
+
+function humanMB(bytes: number) {
+  return (bytes / 1024 / 1024).toFixed(1);
+}
 
 function UploadAssetButton({
   accept,
@@ -18,6 +22,10 @@ function UploadAssetButton({
   const [progress, setProgress] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
+  const [hint, setHint] = useState<string>(""); // small note after upload
+  const timer = useRef<number | null>(null);
+
+  useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
 
   const pick = () => inputRef.current?.click();
 
@@ -25,15 +33,16 @@ function UploadAssetButton({
     const f = e.target.files?.[0];
     if (!f) return;
     setErr(null);
+    setHint("");
     setFileName(f.name);
 
     if (maxBytes && f.size > maxBytes) {
-      setErr(`File too large: ${(f.size / 1024 / 1024).toFixed(1)} MB`);
+      setErr(`File too large: ${humanMB(f.size)} MB`);
       e.target.value = "";
+      timer.current = window.setTimeout(() => setErr(null), 5000);
       return;
     }
 
-    // start upload
     setBusy(true);
     setProgress(0);
 
@@ -57,10 +66,16 @@ function UploadAssetButton({
         setBusy(false);
         setFileName("");
         if (inputRef.current) inputRef.current.value = "";
+        // gentle hint for videos
+        if (assetType === "video") {
+          setHint("Uploaded. Preparing formats…");
+          timer.current = window.setTimeout(() => setHint(""), 5000);
+        }
         onDone?.();
       } else {
         setErr(`Upload failed: ${xhr.status} ${xhr.responseText || ""}`.trim());
         setBusy(false);
+        timer.current = window.setTimeout(() => setErr(null), 5000);
       }
     };
     xhr.send(fd);
@@ -68,7 +83,7 @@ function UploadAssetButton({
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <button type="button" onClick={pick} disabled={busy} aria-busy={busy}>
+      <button className="btn" type="button" onClick={pick} disabled={busy} aria-busy={busy}>
         {busy ? `Uploading… ${progress}%` : (label ?? "Upload")}
       </button>
       <input
@@ -79,7 +94,8 @@ function UploadAssetButton({
         style={{ display: "none" }}
       />
       {fileName && <small title={fileName}>{fileName}</small>}
-      {err && <small style={{ color: "crimson" }} aria-live="polite">{err}</small>}
+      {err && <small style={{ color: "crimson" }} role="status" aria-live="polite">{err}</small>}
+      {!err && hint && <small style={{ color: "#9ca3af" }}>{hint}</small>}
     </span>
   );
 }

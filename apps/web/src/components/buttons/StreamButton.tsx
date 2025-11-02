@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useDeviceStream } from "@managexr/react-streaming";
-
 
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   useEffect(() => {
@@ -17,13 +16,14 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
     >
       <div onClick={(e) => e.stopPropagation()}>
         {children}
-        <button type="button" onClick={onClose} /* ...styles */>Close</button>
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: 12 }}>
+          <button className="btn btn--sm" type="button" onClick={onClose}>Close</button>
+        </div>
       </div>
     </div>,
     document.body
   );
 }
-
 
 export function StreamButton({ deviceId, label = "Stream" }: { deviceId: string; label?: string }) {
   const [open, setOpen] = useState(false);
@@ -51,11 +51,13 @@ export function StreamButton({ deviceId, label = "Stream" }: { deviceId: string;
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)}>{label}</button>
+      <button className="btn btn--primary" type="button" onClick={() => setOpen(true)} title="Open device stream">
+        {label}
+      </button>
       {open && (
         <Modal onClose={() => setOpen(false)}>
-          {!token && !err && <p style={{ color: "#fff" }}>Preparing stream…</p>}
-          {err && <p style={{ color: "salmon" }}>{err}</p>}
+          {!token && !err && <p style={{ color: "#fff", padding: 12 }}>Preparing stream…</p>}
+          {err && <p style={{ color: "salmon", padding: 12 }}>{err}</p>}
           {token && <StreamPlayer deviceId={deviceId} token={token} />}
         </Modal>
       )}

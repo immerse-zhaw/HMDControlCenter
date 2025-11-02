@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from "react";
 
-
 export function UploadButton({
   label = "Upload",
   accept = "*/*",
@@ -31,7 +30,6 @@ export function UploadButton({
 
     setFileName(file.name);
 
-    // client-side size guard (default ~ env.MAX_UPLOAD_GB, pass from page if needed)
     if (maxBytes && file.size > maxBytes) {
       setMessage(`File too large (${(file.size/1024/1024).toFixed(1)} MB)`);
       e.target.value = "";
@@ -60,12 +58,12 @@ export function UploadButton({
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <button type="button" onClick={pickFile} disabled={busy} aria-busy={busy}>
+      <button className="btn" type="button" onClick={pickFile} disabled={busy} aria-busy={busy}>
         {busy ? "Uploading…" : label}
       </button>
       <input ref={fileRef} type="file" style={{ display: "none" }} accept={accept} onChange={onPickFile} />
       {fileName && <small title={fileName}>{fileName}</small>}
-      {message && <small aria-live="polite">{message}</small>}
+      {message && <small role="status" aria-live="polite">{message}</small>}
     </span>
   );
 }

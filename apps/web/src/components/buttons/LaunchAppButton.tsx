@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-
 export function LaunchAppButton({
   appId,
   label = "▶",
@@ -40,14 +39,20 @@ export function LaunchAppButton({
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <button type="button" onClick={onLaunch} disabled={busy} aria-busy={busy}>
+      <button
+        className="btn btn--icon btn--primary"
+        type="button"
+        onClick={onLaunch}
+        disabled={busy}
+        aria-busy={busy}
+        aria-label="Launch app"
+      >
         {busy ? "Launching…" : label}
       </button>
-      {msg && <small aria-live="polite">{msg}</small>}
+      {msg && <small role="status" aria-live="polite">{msg}</small>}
     </span>
   );
 }
-
 
 export function LaunchHomeButton({ label = "Home", onDone }: { label?: string; onDone?: () => void }) {
   const [busy, setBusy] = useState(false);
@@ -74,10 +79,10 @@ export function LaunchHomeButton({ label = "Home", onDone }: { label?: string; o
 
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <button type="button" onClick={onLaunch} disabled={busy} aria-busy={busy}>
+      <button className="btn" type="button" onClick={onLaunch} disabled={busy} aria-busy={busy}>
         {busy ? "Going Home…" : label}
       </button>
-      {msg && <small aria-live="polite">{msg}</small>}
+      {msg && <small role="status" aria-live="polite">{msg}</small>}
     </span>
   );
 }
