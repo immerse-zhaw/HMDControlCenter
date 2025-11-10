@@ -9,6 +9,11 @@ export interface OpenGLBButtonProps {
   portalContainer?: Element | null;
   buttonLabel?: string;
   disableZoom?: boolean;
+  onOpen?: () => void;
+  onClose?: () => void;
+  onScaleChange?: (s:number) => void;
+  onAnimationSelect?: (n:string) => void;
+  onPointSizeChange?: (s:number) => void;
 }
 
 const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
@@ -18,6 +23,11 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
   portalContainer,
   buttonLabel = "▶",
   disableZoom = false,
+  onOpen: onOpenProp,
+  onClose: onCloseProp,
+  onScaleChange,
+  onAnimationSelect,
+  onPointSizeChange
 }) => {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -27,15 +37,22 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
     [portalContainer]
   );
 
-  const onOpen = useCallback(() => setOpen(true), []);
-  const onClose = useCallback(() => setOpen(false), []);
+  const handleOpen = useCallback(() => {
+    setOpen(true);
+    onOpenProp?.();
+  }, [onOpenProp]);
+
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    onCloseProp?.();
+  }, [onCloseProp]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, handleClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +66,7 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
       <button
         className="btn btn--icon"
         type="button"
-        onClick={onOpen}
+        onClick={handleOpen}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Open 3D model"
@@ -61,7 +78,7 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
         <div
           ref={overlayRef}
           role="presentation"
-          onMouseDown={(e) => { if (e.target === overlayRef.current) onClose(); }}
+          onMouseDown={(e) => { if (e.target === overlayRef.current) handleClose(); }}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "grid", placeItems: "center", padding: 16 }}
         >
           <div
@@ -71,7 +88,15 @@ const OpenGLBButton: React.FC<OpenGLBButtonProps> = ({
             style={{ background: "#0b0b0b", borderRadius: 6, boxShadow: "0 16px 48px rgba(0,0,0,0.35)", width, maxWidth: "95vw" }}
           >
             <div style={{ width: "100%", height, background: "#000" }}>
-              <GLTFPlayer src={src} width={width} height={height} disableZoom={disableZoom} />
+              <GLTFPlayer 
+                src={src} 
+                width={width} 
+                height={height} 
+                disableZoom={disableZoom}   
+                onPointSizeChange={onPointSizeChange}
+                onScaleChange={onScaleChange}
+                onAnimationSelect={onAnimationSelect}
+              />
             </div>
           </div>
         </div>,

@@ -11,7 +11,7 @@ type Projection =
 type TranscodeInfo = {
   status: "processing" | "ready" | "failed";
   updatedAt: number;
-  variants?: { hls?: string; mp4?: string }; // type left intact; we will only use mp4
+  variants?: { hls?: string; mp4?: string };
   error?: string;
 };
 
@@ -29,8 +29,8 @@ type AssetMeta = {
 
 function isIOS(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-         (navigator.platform === "MacIntel" && (navigator as any).maxTouchPoints > 1);
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && (navigator as any).maxTouchPoints > 1);
 }
 
 export interface VideoPlayerButtonProps {
@@ -42,6 +42,13 @@ export interface VideoPlayerButtonProps {
   height?: number;
   portalContainer?: Element | null;
   buttonLabel?: string;
+
+  onOpen?: () => void;
+  onClose?: () => void;
+  onResume?: () => void;
+  onPause?: () => void;
+  onSetTime?: (time: number) => void;
+  onChangeProjection?: (projection: Projection) => void;
 }
 
 const VideoPlayerButton: React.FC<VideoPlayerButtonProps> = ({
@@ -52,6 +59,12 @@ const VideoPlayerButton: React.FC<VideoPlayerButtonProps> = ({
   height = 405,
   portalContainer,
   buttonLabel = "▶",
+  onOpen: onOpenProp,
+  onClose: onCloseProp,
+  onResume,
+  onPause,
+  onSetTime,
+  onChangeProjection
 }) => {
   const [open, setOpen] = useState(false);
   const [resolvedSrc, setResolvedSrc] = useState<string | null>(src ?? null);
@@ -60,7 +73,6 @@ const VideoPlayerButton: React.FC<VideoPlayerButtonProps> = ({
   const [busy, setBusy] = useState<boolean>(false);
   const [mp4Src, setMp4Src] = useState<string | null>(null);
 
-  const overlayRef = useRef<HTMLDivElement | null>(null);
   const timer = useRef<number | null>(null);
 
   const container = useMemo(
@@ -68,15 +80,22 @@ const VideoPlayerButton: React.FC<VideoPlayerButtonProps> = ({
     [portalContainer]
   );
 
-  const onOpen = useCallback(() => setOpen(true), []);
-  const onClose = useCallback(() => setOpen(false), []);
+  const handleOpen = useCallback(() => {
+    setOpen(true);
+    onOpenProp?.();
+  }, [onOpenProp]);
+
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    onCloseProp?.();
+  }, [onCloseProp]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, handleClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -135,12 +154,11 @@ const VideoPlayerButton: React.FC<VideoPlayerButtonProps> = ({
           return;
         }
 
-        // ready: only MP4 (no HLS)
+        // ready
         setBusy(false);
         const mp4 = a.transcode?.variants?.mp4 ?? null;
         setMp4Src(mp4);
 
-        // Prefer MP4 on iOS, otherwise also MP4 (or fall back to original stream)
         const preferMp4 = isIOS();
         const chosen = preferMp4 ? (mp4 ?? a.streamUrl) : (mp4 ?? a.streamUrl);
         setResolvedSrc(chosen || null);
@@ -161,14 +179,12 @@ const VideoPlayerButton: React.FC<VideoPlayerButtonProps> = ({
     };
   }, [src, assetId]);
 
-  // With HLS removed, we don't need an error-capture HLS→MP4 fallback anymore.
-
   return (
     <>
       <button
         className="btn btn--icon"
         type="button"
-        onClick={onOpen}
+        onClick={handleOpen}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Open video"
@@ -181,9 +197,8 @@ const VideoPlayerButton: React.FC<VideoPlayerButtonProps> = ({
 
       {open && container && createPortal(
         <div
-          ref={overlayRef}
           role="presentation"
-          onMouseDown={(e) => { if (e.target === overlayRef.current) onClose(); }}
+          onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "grid", placeItems: "center", padding: 16 }}
         >
           <div
@@ -208,6 +223,10 @@ const VideoPlayerButton: React.FC<VideoPlayerButtonProps> = ({
                     width={width}
                     height={height}
                     initialProjection={initialProjection}
+                    onResume={onResume}
+                    onPause={onPause}
+                    onSetTime={onSetTime}
+                    onChangeProjection={onChangeProjection}
                   />
                 )
               )}

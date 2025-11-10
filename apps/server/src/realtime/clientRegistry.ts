@@ -23,8 +23,8 @@ export function getClient(deviceId: DeviceId): DeviceInfo | undefined {
 }
 
 
-export function listClients(): Omit<DeviceInfo, 'ws'>[] { 
-    return Array.from(clients.values()).map(({ws, ...info}) => info);
+export function listClients(): DeviceInfo[] { 
+    return Array.from(clients.values());
 }
 
 

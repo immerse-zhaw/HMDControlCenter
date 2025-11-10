@@ -26,7 +26,7 @@ const PROJ_LABELS: Record<Projection, string> = {
   "EAC_LR": "EAC 3D (SBS)",
 };
 
-// ---------- One-time style injection (SSR-safe) ----------
+// ---------- One-time style injection ----------
 if (typeof document !== "undefined") {
   const STYLE_ID = "vjs-projection-gear-size-style";
   if (!document.getElementById(STYLE_ID)) {
@@ -41,7 +41,7 @@ if (typeof document !== "undefined") {
   }
 }
 
-// ---------- One-time registration of the gear menu (SSR-safe) ----------
+// ---------- Projection menu registration ----------
 if (typeof document !== "undefined" && !(videojs as any).getComponent("ProjectionMenuButton")) {
   const MenuButton = videojs.getComponent("MenuButton");
   const MenuItem = videojs.getComponent("MenuItem");
@@ -91,6 +91,11 @@ interface VideoPlayerProps {
   width?: number;
   height?: number;
   initialProjection?: Projection;
+
+  onResume?: () => void;
+  onPause?: () => void;
+  onSetTime?: (time: number) => void;
+  onChangeProjection?: (projection: Projection) => void;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -98,12 +103,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   width = 640,
   height = 360,
   initialProjection = "NONE",
+  onResume,
+  onPause,
+  onSetTime,
+  onChangeProjection,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<videojs.Player | null>(null);
   const [projection, setProjection] = useState<Projection>(initialProjection);
 
-  // (Re)build player whenever src or projection changes
   useEffect(() => {
     if (!containerRef.current || !src) return;
 
@@ -155,24 +163,38 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       const anyPlayer = player as any;
       if (typeof anyPlayer.vr === "function") {
         anyPlayer.vr({ projection, debug: false, forceCardboard: false });
-      } else {
-        console.error("videojs-vr not attached");
       }
     });
 
+    // projection change
     const onSelect = (_e: any, data: { projection?: Projection }) => {
-      if (data?.projection) setProjection(data.projection);
+      if (data?.projection) {
+        setProjection(data.projection);
+        onChangeProjection?.(data.projection);
+      }
     };
     player.on("projection:select", onSelect);
 
+    // pause/resume
+    player.on("pause", () => onPause?.());
+    player.on("play", () => onResume?.());
+
+    // seeking
+    player.on("seeking", () => onSetTime?.(player.currentTime()));
+
     return () => {
       player.off("projection:select", onSelect);
-      try { player.dispose(); } catch {}
+      player.dispose();
       playerRef.current = null;
     };
   }, [src, projection, width, height]);
 
-  return <div ref={containerRef} style={{ width, height, background: "#000", position: "relative" }} />;
+  return (
+    <div
+      ref={containerRef}
+      style={{ width, height, background: "#000", position: "relative" }}
+    />
+  );
 };
 
 export default VideoPlayer;

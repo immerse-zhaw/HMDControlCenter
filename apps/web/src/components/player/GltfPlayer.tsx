@@ -16,6 +16,9 @@ export type GLTFPlayerProps = {
   scaleStep?: number;
   disableZoom?: boolean;
   useNetworkProgress?: boolean;
+  onScaleChange?: (s:number) => void;
+  onAnimationSelect?: (a:string) => void;
+  onPointSizeChange?: (s:number) => void;
 };
 
 const GLTFPlayer: React.FC<GLTFPlayerProps> = ({
@@ -32,6 +35,9 @@ const GLTFPlayer: React.FC<GLTFPlayerProps> = ({
   scaleStep = 0.1,
   disableZoom,
   useNetworkProgress = true,
+  onScaleChange,
+  onAnimationSelect,
+  onPointSizeChange
 }) => {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const mvRef = useRef<any | null>(null);
@@ -86,11 +92,15 @@ const GLTFPlayer: React.FC<GLTFPlayerProps> = ({
         }
       }
     });
+    onPointSizeChange?.(size);
     return found;
   }
 
   const applyScale = (el: any, s: number) => {
-    try { el.scale = `${s} ${s} ${s}`; } catch { }
+    try { 
+      el.scale = `${s} ${s} ${s}`; 
+      onScaleChange?.(s);
+    } catch { }
   };
 
   useEffect(() => {
@@ -121,7 +131,10 @@ const GLTFPlayer: React.FC<GLTFPlayerProps> = ({
         const list: string[] = (el as any).availableAnimations ?? [];
         setAnimations(list);
         const active: string = (el as any).animationName ?? "";
-        if (active) setAnimationName(active);
+        if (active) 
+        {
+          setAnimationName(active);
+        }
       } catch { }
       const found = applyPointSizing(el, pointSize);
       setHasPoints(found);
@@ -274,7 +287,7 @@ const GLTFPlayer: React.FC<GLTFPlayerProps> = ({
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <label htmlFor="gltf-player-anim" style={{ opacity: .85, width: 64 }}>animation</label>
             <select id="gltf-player-anim" value={animationName}
-              onChange={(e) => setAnimationName(e.currentTarget.value)}
+              onChange={(e) => {setAnimationName(e.currentTarget.value); onAnimationSelect?.(e.currentTarget.value);}}
               style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "4px 8px", height: 28 }}>
               <option value="">(none)</option>
               {animations.map((name) => <option key={name} value={name}>{name}</option>)}

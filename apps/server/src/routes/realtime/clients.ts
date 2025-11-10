@@ -7,7 +7,7 @@ export const clientsRouter = Router();
 
 
 clientsRouter.get("/listClients", (req, res) => {
-    res.json({ devices: listClients() });
+    res.json({ devices: listClients()});
 });
 
 
@@ -26,4 +26,19 @@ clientsRouter.post("/:deviceId/command", (req, res) => {
   } catch (err: any) {
     return res.status(502).json({ ok: false, error: err?.message ?? "Send failed" });
   }
+});
+
+clientsRouter.post("/broadcast", (req, res) => {
+  const devices = listClients();
+  const data = JSON.stringify(req.body);
+  let sent = 0;
+  for (const d of devices) {
+    try {
+      if (!d || d.ws.readyState === WebSocket.OPEN) {
+        d.ws.send(data);
+        sent++;
+      }
+    } catch {}
+  }
+  res.json({ ok: true, sent });
 });
